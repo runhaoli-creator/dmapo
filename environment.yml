@@ -1,0 +1,22 @@
+name: dmapo
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - pyyaml
+      - datasets
+      - transformers
+      - accelerate
+      - trl
+      - peft
+      - torch
+      - tqdm
+      - pandas
+      - numpy
+      - scikit-learn
+      - orjson

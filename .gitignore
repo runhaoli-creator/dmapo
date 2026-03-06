@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# Data – all data files (downloaded from HuggingFace at runtime)
+data/raw/
+data/processed/
+data/benchmarks/
+
+# Outputs – checkpoints, logs, paper, eval results
+outputs/
+logs/
+*.ckpt
+*.pt
+*.bin
+*.safetensors
+
+# HuggingFace cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,16 @@
+model: mistralai/Mistral-7B-Instruct-v0.2
+
+num_candidates: 4
+max_new_tokens: 512
+temperature: 0.8
+top_p: 0.95
+batch_size: 16
+
+prompts_file: data/processed/all_prompts.jsonl
+
+output:
+  train: data/processed/candidates_train.jsonl
+  val: data/processed/candidates_val.jsonl
+
+# Resume: skip prompts whose id already appears in output files
+resume: true

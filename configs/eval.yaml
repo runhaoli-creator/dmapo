@@ -1,0 +1,20 @@
+input:
+  gated_train: data/processed/gated_train.jsonl
+  gated_val: data/processed/gated_val.jsonl
+  policy_dir: outputs/dmapo_policy
+  base_model: mistralai/Mistral-7B-Instruct-v0.2
+
+output_dir: outputs/eval
+
+# How many held-out examples to use for generation-based metrics
+max_eval_prompts: 200
+batch_size: 4
+max_new_tokens: 256
+
+metrics:
+  - label_distribution
+  - abstention_rate
+  - judge_variance_stats
+  - response_length_stats
+  - perplexity
+  - win_rate

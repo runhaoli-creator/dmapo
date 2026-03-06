@@ -1,0 +1,57 @@
+algorithm: kto          # "kto" or "dpo"
+
+model:
+  name: mistralai/Mistral-7B-Instruct-v0.2
+  torch_dtype: bfloat16
+  attn_implementation: eager   # use "flash_attention_2" if available
+
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  bias: none
+
+kto:
+  beta: 0.1
+  desirable_weight: 1.0
+  undesirable_weight: 1.0
+  max_length: 1024
+  max_prompt_length: 512
+
+dpo:
+  beta: 0.1
+  loss_type: sigmoid
+  max_length: 1024
+  max_prompt_length: 512
+
+training:
+  output_dir: outputs/dmapo_policy
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 5.0e-5
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  optim: adamw_torch_fused
+  bf16: true
+  fp16: false
+  logging_steps: 10
+  save_steps: 200
+  eval_steps: 200
+  evaluation_strategy: steps
+  dataloader_num_workers: 2
+  report_to: none
+
+dataset:
+  kto_train: data/processed/kto_train.jsonl
+  kto_val: data/processed/kto_val.jsonl
+  dpo_train: data/processed/dpo_train.jsonl
+  dpo_val: data/processed/dpo_val.jsonl

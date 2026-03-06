@@ -1,0 +1,40 @@
+# Shared model for all judges (can be overridden per judge)
+default_model: Qwen/Qwen3-8B
+
+judges:
+  - name: helpfulness
+    model: null          # null → use default_model
+    score_min: 1
+    score_max: 10
+    max_new_tokens: 32
+
+  - name: factuality
+    model: null
+    score_min: 1
+    score_max: 10
+    max_new_tokens: 32
+
+  - name: conciseness
+    model: null
+    score_min: 1
+    score_max: 10
+    max_new_tokens: 32
+
+batch_size: 16
+
+# Process critic
+critic:
+  model: null            # null → use default_model
+  max_new_tokens: 16
+  penalty_weight: 0.15   # final_score -= penalty_weight * mean_score  if flawed
+
+# Alpha for final score aggregation: final = mean_judge - alpha * penalty
+alpha: 0.15
+
+input:
+  train: data/processed/candidates_train.jsonl
+  val: data/processed/candidates_val.jsonl
+
+output:
+  train: data/processed/scored_train.jsonl
+  val: data/processed/scored_val.jsonl

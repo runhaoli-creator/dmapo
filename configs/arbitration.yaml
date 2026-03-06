@@ -1,0 +1,18 @@
+# Confidence gating thresholds
+variance_threshold: 2.5      # discard if inter-judge variance > this
+
+# Score thresholds for label assignment
+desirable_threshold: 7.0     # final_score >= this → desirable
+undesirable_threshold: 4.0   # final_score <= this → undesirable
+                              # scores between thresholds → discard (not abstain)
+
+# Minimum score gap within a prompt (for DPO pair validity)
+min_score_gap: 1.5
+
+input:
+  train: data/processed/scored_train.jsonl
+  val: data/processed/scored_val.jsonl
+
+output:
+  train: data/processed/gated_train.jsonl
+  val: data/processed/gated_val.jsonl

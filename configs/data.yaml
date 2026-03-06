@@ -1,0 +1,23 @@
+seed: 42
+
+datasets:
+  ultrafeedback:
+    hf_name: openbmb/UltraFeedback
+    split: train
+    prompt_field: instruction
+    task_type_field: null          # no task_type in UltraFeedback
+    max_samples: 10000
+
+  helpsteer2:
+    hf_name: nvidia/HelpSteer2
+    split: train
+    prompt_field: prompt
+    task_type_field: null
+    max_samples: 5000
+
+output_dir: data/processed
+ultrafeedback_out: data/processed/ultrafeedback_prompts.jsonl
+helpsteer2_out: data/processed/helpsteer2_prompts.jsonl
+combined_out: data/processed/all_prompts.jsonl
+
+val_fraction: 0.05

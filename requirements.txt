@@ -1,0 +1,15 @@
+# Core ML / NLP
+torch
+transformers
+accelerate
+trl
+peft
+datasets
+
+# Data & utilities
+pyyaml
+tqdm
+pandas
+numpy
+scikit-learn
+orjson
