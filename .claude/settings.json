@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(git *)",
+      "Bash(python *)",
+      "Bash(nvidia-smi*)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(pip list*)",
+      "Bash(pip show*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(pip install*)",
+      "Bash(git push*)"
+    ]
+  }
+}

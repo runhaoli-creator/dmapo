@@ -32,6 +32,10 @@ logs/
 *.bin
 *.safetensors
 
+# Checkpoints & experiment tracking
+checkpoints/
+wandb/
+
 # HuggingFace cache
 .cache/
 
