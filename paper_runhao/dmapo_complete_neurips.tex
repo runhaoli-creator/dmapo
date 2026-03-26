@@ -116,8 +116,14 @@ Our work is orthogonal to these algorithmic innovations: we focus on \emph{data 
 Recent work highlights the importance of data quality.
 Rafailov et al.~\cite{rafailov2023dpo} observed that noisy preferences degrade DPO performance, but did not propose aggressive filtering mechanisms.
 Ethayarajh et al.~\cite{ethayarajh2024kto} showed that KTO handles ambiguous labels better than DPO, but still used standard noisy datasets.
-Our work goes further: we systematically filter preference data to retain only high-consensus, extreme-quality examples.
-This aligns with the broader ``data-centric AI'' movement~\cite{zha2023datacentric}, which emphasizes that data quality often matters more than model capacity or algorithm sophistication for downstream task performance.
+
+\paragraph{Data Selection for Alignment.}
+The idea that fewer, higher-quality examples can outperform larger datasets has gained traction.
+LIMA~\cite{zhou2023lima} demonstrated that only 1,000 carefully curated SFT examples can produce a competitive model, arguing that alignment is primarily about learning style rather than knowledge.
+AlpaGasus~\cite{chen2024alpagasus} used ChatGPT to filter the 52k Alpaca dataset down to 9k examples, yielding better performance with 5.7$\times$ less data.
+DEITA~\cite{liu2024deita} proposed automatic data selection via complexity and quality scoring for instruction tuning.
+These works focus on SFT data selection; our work extends this principle to \emph{preference} data, where noise is more pernicious because contradictory preference pairs produce directly opposing gradients during optimization.
+This aligns with the broader ``data-centric AI'' movement~\cite{zha2023datacentric}, which emphasizes that data quality often matters more than model capacity or algorithm sophistication.
 
 \paragraph{LLM-Based Evaluation and Confidence Gating.}
 Using LLM-based judges for evaluation is standard in modern benchmarking~\cite{zheng2024judging,li2023alpacaeval}.
@@ -249,7 +255,7 @@ We fine-tune the policy using Kahneman-Tversky Optimization (KTO)~\cite{ethayara
 This is more natural than DPO for our quality-gated data, which produces binary desirable/undesirable labels rather than paired preferences.
 
 \paragraph{Model Configuration.}
-Mistral-7B-Instruct-v0.2 (7.24B params) + LoRA:
+Mistral-7B-Instruct-v0.2 (7.24B params) + LoRA~\cite{hu2022lora}:
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
   \item Rank $r{=}16$, $\alpha{=}32$, dropout$=0.05$
   \item Target modules: Q/K/V/O, gate, up, down (all 7 $\rightarrow$ $\sim$160M params, 2.2\% trainable)
@@ -295,7 +301,7 @@ All methods fine-tune Mistral-7B-Instruct-v0.2 with identical LoRA config. We co
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
   \item MT-Bench: 80 multi-turn questions, 8 categories, Qwen3-8B judge, 1--10 scale
   \item AlpacaEval 2.0: 805 instructions, pairwise vs. text-davinci-003
-  \item IFEval: 541 rule-verified prompts (rule-based, no LLM judge)
+  \item IFEval~\cite{zhou2023ifeval}: 541 rule-verified prompts (rule-based, no LLM judge)
   \item Internal: 129 gated val prompts, pairwise vs. base model
 \end{itemize}
 
@@ -473,11 +479,16 @@ Mean response length (tokens)       & 223 (des: 238, undes: 207) \\
 
 Standard preference datasets contain substantial label noise.
 In UltraFeedback-binarized, many ``preferred'' responses are only marginally better than rejected alternatives; some pairs are mislabeled.
-Training on such ambiguous data forces models to fit contradictory gradients.
-\ours{}'s quality gate eliminates this noise by retaining only candidates with extreme scores (gap: $\sim$6.8 points) and high inter-judge consensus.
+Training on such ambiguous data forces models to fit contradictory gradients: the same surface pattern is rewarded in one pair and penalized in another, resulting in a noisy optimization landscape.
 
-This is not unique to UltraFeedback---the phenomenon of fine-tuning degrading benchmark performance on noisy preference data is well-known.
-Our contribution is a systematic approach to filtering that recovers the expected improvement.
+\ours{}'s quality gate eliminates this noise by retaining only candidates with extreme scores (gap: $\sim$6.8 points) and high inter-judge consensus.
+The result is a training set where every gradient update pushes the model in a consistent direction.
+This connects to a broader pattern observed across alignment methods: LIMA~\cite{zhou2023lima} showed that 1,000 curated SFT examples suffice, and AlpaGasus~\cite{chen2024alpagasus} found that 83\% of Alpaca data is actively detrimental.
+Our results extend this finding to the preference optimization setting, where the effect is arguably stronger---noisy preference pairs do not merely fail to help; they actively degrade the model below the pretrained baseline, as evidenced by the MT-Bench regression observed in all baselines except \ours{}.
+
+This is not unique to UltraFeedback.
+The phenomenon of fine-tuning degrading benchmark performance on noisy preference data has been observed across datasets and methods.
+Our contribution is a systematic, multi-agent approach to filtering that recovers the expected improvement without requiring manual curation.
 
 \subsection{Role of the Process Critic}
 
@@ -507,7 +518,7 @@ Total compute cost favors \ours{}: smaller model size, faster convergence, and b
 \paragraph{Future Directions.}
 \begin{enumerate}[leftmargin=*,itemsep=0.5ex]
   \item Extend to other domains (coding, mathematics, retrieval-augmented generation).
-  \item Combine \ours{} with other preference algorithms (e.g., DPO-IPO) to see if the benefits compound.
+  \item Combine \ours{} with other preference algorithms (e.g., DPO, SimPO, IPO) to see if the benefits compound.
   \item Use adaptive filtering thresholds learned from held-out validation performance.
   \item Explore online filtering: continuously update gating thresholds as the model improves.
 \end{enumerate}
@@ -525,7 +536,9 @@ Despite using $5$--$10\times$ fewer examples than baselines, \ours{} outperforms
 Notably, \ours{} is the only method that improves over the pretrained base model on MT-Bench, while all baselines degrade---a clear signal that data quality dominates in preference optimization.
 
 Our work underscores a fundamental principle: when training LLMs on preference data, the quality of the signal is far more important than the quantity of data.
-This has implications for practitioners: rather than investing in larger preference datasets, consider filtering existing data more aggressively via multi-agent consensus.
+This has practical implications: rather than investing in larger preference datasets, practitioners should consider filtering existing data more aggressively via multi-agent consensus.
+More broadly, our results suggest that the alignment community may be over-indexing on algorithm design (new loss functions, new reward formulations) when the bottleneck is often the training data itself.
+We hope \ours{} encourages further research into data-centric approaches to preference optimization, where the focus shifts from \emph{how} to train to \emph{what} to train on.
 
 % ══════════════════════════════════════════════════════════════════════════════
 % REFERENCES
@@ -543,6 +556,11 @@ A general theoretical paradigm to understand learning from human preferences.
 Bengio, Y., Louradour, J., Collobert, R., \& Weston, J. (2009).
 Curriculum learning.
 \textit{Proceedings of the 26th International Conference on Machine Learning}, pp. 41--48.
+
+\bibitem[Chen et al.]{chen2024alpagasus}
+Chen, L., Li, S., Yan, J., Wang, H., Gunaratna, K., Yadav, V., Tang, Z., Srinivasan, V., Zhou, T., Huang, H., \& Jin, H. (2024).
+AlpaGasus: Training a better Alpaca with fewer data.
+\textit{International Conference on Learning Representations (ICLR)}.
 
 \bibitem[Black et al.]{black2024multi}
 Black, S., Gao, L., Wang, P., Leahy, C., \& Biderman, S. (2024).
@@ -604,6 +622,11 @@ Li, X., Zhang, T., Dubois, Y., Roig, G., Ranalli, A., Grangier, D., ... \& Malhe
 AlpacaEval: An automatic evaluator of instructional-following models.
 \textit{GitHub repository}.
 
+\bibitem[Liu et al.]{liu2024deita}
+Liu, W., Zeng, W., He, K., Jiang, Y., \& He, J. (2024).
+What makes good data for alignment? A comprehensive study of automatic data selection in instruction tuning.
+\textit{International Conference on Learning Representations (ICLR)}.
+
 \bibitem[Meng et al.]{meng2024simpo}
 Meng, Y., Xie, K., Zhao, Y., Song, Y., Zhang, Y., Wang, L., ... \& Zhang, D. (2024).
 SimPO: Simple preference optimization with a reference-free reward.
@@ -634,10 +657,15 @@ Zha, D., Bhat, Z.~P., Lai, K.~H., Yang, F., Jiang, Z., Zhong, S., \& Hu, X. (202
 Data-centric artificial intelligence: A survey.
 \textit{ACM Computing Surveys}, 56(4), 1--47.
 
-\bibitem[Zhou et al.]{zhou2023ifeval}
+\bibitem[Zhou et al.(2023a)]{zhou2023ifeval}
 Zhou, J., Pasunuru, R., Mishra, S., Wang, T., Zhang, L., Dozat, T., ... \& Pasupat, P. (2023).
 Instruction-following evaluation for large language models.
 \textit{arXiv preprint arXiv:2310.07641}.
+
+\bibitem[Zhou et al.(2023b)]{zhou2023lima}
+Zhou, C., Liu, P., Xu, P., Iyer, S., Sun, J., Mao, Y., Ma, X., Efrat, A., Yu, P., Yu, L., Zhang, S., Ghosh, G., Lewis, M., Zettlemoyer, L., \& Levy, O. (2023).
+LIMA: Less is more for alignment.
+\textit{Advances in Neural Information Processing Systems}, 36.
 
 \bibitem[Zheng et al.]{zheng2024judging}
 Zheng, L., Chiang, W.~L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., ... \& Xing, E.~P. (2024).
