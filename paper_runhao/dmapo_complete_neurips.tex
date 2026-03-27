@@ -214,8 +214,8 @@ This moderate penalty pushes borderline-desirable candidates with flawed reasoni
 The confidence gate applies two successive filters:
 
 \paragraph{Variance Gate.}
-Discard candidates where inter-judge score variance $\sigma^2 = \text{Var}(s_1, s_2, s_3) > \tau_{\text{var}}{=}2.5$.
-High variance indicates fundamental disagreement---any binary label assignment would be unreliable.
+Discard candidates where the inter-judge score variance exceeds the threshold: $\sigma^2 = \text{Var}(s_1, s_2, s_3) > \tau_{\text{var}}{=}2.5$.
+High variance indicates fundamental disagreement among judges---any binary label assignment for such candidates would be unreliable and could introduce the same noise we aim to eliminate.
 
 \paragraph{Quality Gate.}
 For remaining candidates, assign binary labels using extreme-score thresholds:
@@ -349,7 +349,7 @@ Base (pretrained) & --- & 7.41 & 96.0\% & 41.2\% & --- \\
 \caption{\textbf{MT-Bench per-category breakdown.} Best per category in \textbf{bold}.}
 \label{tab:categories}
 \vspace{0.3em}
-\small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{l cccccccc c}
 \toprule
 \textbf{Method} & \textbf{Coding} & \textbf{Extract.} & \textbf{Human.} & \textbf{Math} & \textbf{Reason.} & \textbf{Roleplay} & \textbf{STEM} & \textbf{Writing} & \textbf{Avg.} \\
@@ -363,7 +363,8 @@ Base            & 5.60 & \best{7.90} & 8.70 & 6.45 & 7.15 & 7.40 & 8.20 & 7.90 &
 \midrule
 \textbf{\ours{}} & \best{6.15} & 7.85 & \best{8.90} & \best{7.15} & \best{7.70} & \best{7.65} & \best{8.60} & 7.95 & \best{7.62} \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 
 \ours{} shows the largest gains in reasoning-heavy categories (Math +0.70, Reasoning +0.55, Coding +0.55 over base), aligning with our hypothesis that the process critic is particularly effective for logical tasks.
@@ -392,6 +393,7 @@ No gating       & 54.2k & 7.04 & 94.8\% & 65.1\% \\
 \end{table}
 
 Performance improves monotonically with stricter multi-agent consensus, confirming that data quality dominates quantity.
+Notably, the gap between 1-judge and 3-judge gating is substantial (+0.41 MT-Bench, +13.2\% internal win rate), indicating that multi-agent consensus provides filtering power beyond what any single evaluator achieves.
 
 \paragraph{Effect of Acceptance-Rate Threshold.}
 
@@ -416,6 +418,8 @@ $\sim$1\%  & 0.5k  & 7.44 & 95.7\% & 80.6\% \\
 \end{table}
 
 An optimal operating point exists: too lenient ($\geq$10\%) admits noise; too strict ($\leq$1\%) loses data.
+The performance drop at 1\% acceptance (0.5k examples) suggests a minimum data requirement below which the model underfits, despite high per-example quality.
+The 3.45\% operating point balances these pressures, retaining enough diversity while maintaining strict quality standards.
 
 \subsection{Inter-Judge Agreement}
 
@@ -439,6 +443,8 @@ Mean           & 0.64 & 0.74 & 80.1\% \\
 \end{table}
 
 All pairs show moderate-to-strong agreement ($\kappa \geq 0.61$, $r \geq 0.72$), validating the use of multi-agent consensus for quality filtering.
+The helpfulness--factuality pair shows the strongest correlation ($r = 0.76$), while the factuality--conciseness pair is weakest ($r = 0.72$), consistent with the expectation that factual accuracy and conciseness capture more orthogonal quality dimensions.
+This partial independence is precisely what makes multi-agent consensus informative: high agreement across partially independent evaluators provides stronger evidence than agreement among redundant ones.
 
 \subsection{Pipeline Statistics}
 
@@ -544,133 +550,133 @@ We hope \ours{} encourages further research into data-centric approaches to pref
 % REFERENCES
 % ══════════════════════════════════════════════════════════════════════════════
 
-\bibliographystyle{plainnat}
-\begin{thebibliography}{99}
+\bibliographystyle{colm2026_conference}
+\begin{thebibliography}{25}
 
-\bibitem[Azar et al.]{azar2023general}
+\bibitem[Azar et~al.(2023)]{azar2023general}
 Azar, M.~G., Ghasemipour, S.~K.~B., Nowozin, S., \& Szepesv\'ari, C. (2023).
 A general theoretical paradigm to understand learning from human preferences.
 \textit{arXiv preprint arXiv:2310.12036}.
 
-\bibitem[Bengio et al.]{bengio2009curriculum}
+\bibitem[Bengio et~al.(2009)]{bengio2009curriculum}
 Bengio, Y., Louradour, J., Collobert, R., \& Weston, J. (2009).
 Curriculum learning.
 \textit{Proceedings of the 26th International Conference on Machine Learning}, pp. 41--48.
 
-\bibitem[Chen et al.]{chen2024alpagasus}
-Chen, L., Li, S., Yan, J., Wang, H., Gunaratna, K., Yadav, V., Tang, Z., Srinivasan, V., Zhou, T., Huang, H., \& Jin, H. (2024).
-AlpaGasus: Training a better Alpaca with fewer data.
-\textit{International Conference on Learning Representations (ICLR)}.
-
-\bibitem[Black et al.]{black2024multi}
+\bibitem[Black et~al.(2024)]{black2024multi}
 Black, S., Gao, L., Wang, P., Leahy, C., \& Biderman, S. (2024).
 Training language models with multi-agent evaluation for robustness.
 \textit{arXiv preprint arXiv:2401.00000}.
 
-\bibitem[Ding et al.]{ding2023ultracheap}
-Ding, N., Chen, Y., Xu, B., Qin, Y., Zheng, Z., Hu, S., ... \& Sun, M. (2023).
-Enhancing chat language models by scaling high-quality instructional conversations.
-\textit{arXiv preprint arXiv:2305.14233}.
+\bibitem[Chen et~al.(2024)]{chen2024alpagasus}
+Chen, L., Li, S., Yan, J., Wang, H., Gunaratna, K., Yadav, V., Tang, Z., Srinivasan, V., Zhou, T., Huang, H., \& Jin, H. (2024).
+AlpaGasus: Training a better Alpaca with fewer data.
+\textit{International Conference on Learning Representations (ICLR)}.
 
-\bibitem[Li et al.(2023b)]{li2023expert}
-Li, G., Hammoud, H.~A.~A.~K., Itani, H., Khizbullin, D., \& Ghanem, B. (2023).
-CAMEL: Communicative agents for ``mind'' exploration of large language model society.
-\textit{Advances in Neural Information Processing Systems}, 36.
-
-\bibitem[Ouyang et al.]{ouyang2022training}
-Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.~L., Mishkin, P., ... \& Leike, J. (2022).
-Training language models to follow instructions with human feedback.
-\textit{Advances in Neural Information Processing Systems}, 35, 27730--27744.
-
-\bibitem[Cobbe et al.]{cobbe2021training}
-Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., ... \& Zaremba, W. (2021).
+\bibitem[Cobbe et~al.(2021)]{cobbe2021training}
+Cobbe, K., Kosaraju, V., Bavarian, M., Chen, M., Jun, H., Kaiser, L., \ldots{} \& Zaremba, W. (2021).
 Training verifiers to solve math word problems.
 \textit{arXiv preprint arXiv:2110.14168}.
 
-\bibitem[Cui et al.]{cui2023ultrafeedback}
-Cui, G., Yuan, L., Ding, N., Yao, G., Zhu, W., Ni, Y., ... \& Sun, M. (2023).
+\bibitem[Cui et~al.(2023)]{cui2023ultrafeedback}
+Cui, G., Yuan, L., Ding, N., Yao, G., Zhu, W., Ni, Y., \ldots{} \& Sun, M. (2023).
 UltraFeedback: Boosting language models with high-quality feedback.
 \textit{arXiv preprint arXiv:2310.01852}.
 
-\bibitem[Ethayarajh et al.]{ethayarajh2024kto}
+\bibitem[Ding et~al.(2023)]{ding2023ultracheap}
+Ding, N., Chen, Y., Xu, B., Qin, Y., Zheng, Z., Hu, S., \ldots{} \& Sun, M. (2023).
+Enhancing chat language models by scaling high-quality instructional conversations.
+\textit{arXiv preprint arXiv:2305.14233}.
+
+\bibitem[Ethayarajh et~al.(2024)]{ethayarajh2024kto}
 Ethayarajh, K., Xu, Y., Jurafsky, D., \& Liang, P. (2024).
 How to train language models on preference data.
 \textit{arXiv preprint arXiv:2404.14657}.
 
-\bibitem[Hong et al.]{hong2024orpo}
+\bibitem[Hong et~al.(2024)]{hong2024orpo}
 Hong, J., Lee, M., \& Thawani, A. (2024).
 ORPO: Monolithic preference optimization without reference model.
 \textit{arXiv preprint arXiv:2403.07691}.
 
-\bibitem[Hu et al.]{hu2022lora}
-Hu, E.~J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., ... \& Chen, W. (2022).
+\bibitem[Hu et~al.(2022)]{hu2022lora}
+Hu, E.~J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., \ldots{} \& Chen, W. (2022).
 LoRA: Low-rank adaptation of large language models.
 \textit{arXiv preprint arXiv:2106.09685}.
 
-\bibitem[Irving et al.]{irving2018debate}
+\bibitem[Irving et~al.(2018)]{irving2018debate}
 Irving, G., Christiano, P., \& Leike, J. (2018).
 AI safety via debate.
 \textit{arXiv preprint arXiv:1805.06949}.
 
-\bibitem[Jiang et al.]{jiang2023mistral}
-Jiang, A.~Q., Sablayrolles, A., Mensch, A., Bamford, C., Chaplot, D.~S., Casas, D.~d.l., ... \& Sayed, W.~E. (2023).
+\bibitem[Jiang et~al.(2023)]{jiang2023mistral}
+Jiang, A.~Q., Sablayrolles, A., Mensch, A., Bamford, C., Chaplot, D.~S., Casas, D.~d.l., \ldots{} \& Sayed, W.~E. (2023).
 Mistral 7B.
 \textit{arXiv preprint arXiv:2310.06825}.
 
-\bibitem[Li et al.]{li2023alpacaeval}
-Li, X., Zhang, T., Dubois, Y., Roig, G., Ranalli, A., Grangier, D., ... \& Malherbe, C. (2023).
+\bibitem[Li et~al.(2023a)]{li2023alpacaeval}
+Li, X., Zhang, T., Dubois, Y., Roig, G., Ranalli, A., Grangier, D., \ldots{} \& Malherbe, C. (2023).
 AlpacaEval: An automatic evaluator of instructional-following models.
 \textit{GitHub repository}.
 
-\bibitem[Liu et al.]{liu2024deita}
+\bibitem[Li et~al.(2023b)]{li2023expert}
+Li, G., Hammoud, H.~A.~A.~K., Itani, H., Khizbullin, D., \& Ghanem, B. (2023).
+CAMEL: Communicative agents for ``mind'' exploration of large language model society.
+\textit{Advances in Neural Information Processing Systems}, 36.
+
+\bibitem[Liu et~al.(2024)]{liu2024deita}
 Liu, W., Zeng, W., He, K., Jiang, Y., \& He, J. (2024).
 What makes good data for alignment? A comprehensive study of automatic data selection in instruction tuning.
 \textit{International Conference on Learning Representations (ICLR)}.
 
-\bibitem[Meng et al.]{meng2024simpo}
-Meng, Y., Xie, K., Zhao, Y., Song, Y., Zhang, Y., Wang, L., ... \& Zhang, D. (2024).
+\bibitem[Meng et~al.(2024)]{meng2024simpo}
+Meng, Y., Xie, K., Zhao, Y., Song, Y., Zhang, Y., Wang, L., \ldots{} \& Zhang, D. (2024).
 SimPO: Simple preference optimization with a reference-free reward.
 \textit{arXiv preprint arXiv:2405.14734}.
 
-\bibitem[Rafailov et al.]{rafailov2023dpo}
+\bibitem[Ouyang et~al.(2022)]{ouyang2022training}
+Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.~L., Mishkin, P., \ldots{} \& Leike, J. (2022).
+Training language models to follow instructions with human feedback.
+\textit{Advances in Neural Information Processing Systems}, 35, 27730--27744.
+
+\bibitem[Rafailov et~al.(2023)]{rafailov2023dpo}
 Rafailov, R., Sharma, A., Mitchell, E., Manning, C.~D., Ermon, S., \& Newman, B. (2023).
 Direct preference optimization: Your language model is secretly a reward model.
 \textit{Advances in Neural Information Processing Systems}, 36, 21068--21084.
 
-\bibitem[Settles]{settles2009active}
+\bibitem[Settles(2009)]{settles2009active}
 Settles, B. (2009).
 \textit{Active Learning}.
 Morgan \& Claypool.
 
-\bibitem[Wang et al.(2023)]{wang2023selfconsistency}
-Wang, X., Wei, J., Schuurmans, D., Le, Q., Chi, E., Narang, S., ... \& Zhou, D. (2023).
+\bibitem[Wang et~al.(2023)]{wang2023selfconsistency}
+Wang, X., Wei, J., Schuurmans, D., Le, Q., Chi, E., Narang, S., \ldots{} \& Zhou, D. (2023).
 Self-consistency improves chain of thought reasoning in language models.
 \textit{arXiv preprint arXiv:2203.11171}.
 
-\bibitem[Wang et al.(2024)]{wang2024helpsteer2}
+\bibitem[Wang et~al.(2024)]{wang2024helpsteer2}
 Wang, Y., Song, Y., Zhai, X., Beyer, L., \& Dosovitskiy, A. (2024).
 HelpSteer2: Open-source dataset for training top-performing reward models.
 \textit{arXiv preprint arXiv:2406.08522}.
 
-\bibitem[Zha et al.]{zha2023datacentric}
+\bibitem[Zha et~al.(2023)]{zha2023datacentric}
 Zha, D., Bhat, Z.~P., Lai, K.~H., Yang, F., Jiang, Z., Zhong, S., \& Hu, X. (2023).
 Data-centric artificial intelligence: A survey.
 \textit{ACM Computing Surveys}, 56(4), 1--47.
 
-\bibitem[Zhou et al.(2023a)]{zhou2023ifeval}
-Zhou, J., Pasunuru, R., Mishra, S., Wang, T., Zhang, L., Dozat, T., ... \& Pasupat, P. (2023).
+\bibitem[Zheng et~al.(2024)]{zheng2024judging}
+Zheng, L., Chiang, W.~L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., \ldots{} \& Xing, E.~P. (2024).
+Judging LLM-as-a-judge with MT-Bench and chatbot arena.
+\textit{Advances in Neural Information Processing Systems}, 36, 46595--46623.
+
+\bibitem[Zhou et~al.(2023a)]{zhou2023ifeval}
+Zhou, J., Pasunuru, R., Mishra, S., Wang, T., Zhang, L., Dozat, T., \ldots{} \& Pasupat, P. (2023).
 Instruction-following evaluation for large language models.
 \textit{arXiv preprint arXiv:2310.07641}.
 
-\bibitem[Zhou et al.(2023b)]{zhou2023lima}
+\bibitem[Zhou et~al.(2023b)]{zhou2023lima}
 Zhou, C., Liu, P., Xu, P., Iyer, S., Sun, J., Mao, Y., Ma, X., Efrat, A., Yu, P., Yu, L., Zhang, S., Ghosh, G., Lewis, M., Zettlemoyer, L., \& Levy, O. (2023).
 LIMA: Less is more for alignment.
 \textit{Advances in Neural Information Processing Systems}, 36.
-
-\bibitem[Zheng et al.]{zheng2024judging}
-Zheng, L., Chiang, W.~L., Sheng, Y., Zhuang, S., Wu, Z., Zhuang, Y., ... \& Xing, E.~P. (2024).
-Judging LLM-as-a-judge with MT-Bench and chatbot arena.
-\textit{Advances in Neural Information Processing Systems}, 36, 46595--46623.
 
 \end{thebibliography}
 
@@ -680,7 +686,7 @@ Judging LLM-as-a-judge with MT-Bench and chatbot arena.
 
 \appendix
 
-\section{Appendix: Judge Prompts and Configurations}
+\section{Judge Prompts and Configurations}
 \label{app:prompts}
 
 \paragraph{Helpfulness Judge System Prompt.}
@@ -703,7 +709,7 @@ You are an expert evaluator assessing the CONCISENESS of AI responses. After rea
 You are a reasoning quality evaluator. Read the instruction and response carefully. Determine whether the response contains flawed, circular, or unsupported reasoning. Reply on the first line with YES or NO. On the second line, if YES, specify the failure type: circular $|$ unsupported $|$ contradictory. On the third line, give one short reason.
 \end{quote}
 
-\section{Appendix: Training Hyperparameters}
+\section{Training Hyperparameters}
 \label{app:hyperparams}
 
 \subsection{LoRA Configuration}
@@ -731,7 +737,7 @@ You are a reasoning quality evaluator. Read the instruction and response careful
   \item \textbf{Eval frequency}: every 200 steps
 \end{itemize}
 
-\section{Appendix: Confidence Gate Thresholds}
+\section{Confidence Gate Thresholds}
 \label{app:thresholds}
 
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
@@ -743,7 +749,7 @@ You are a reasoning quality evaluator. Read the instruction and response careful
 
 These thresholds were selected to optimize the balance between data quality and quantity, as shown in Table~\ref{tab:abl_threshold}.
 
-\section{Appendix: Reproducibility Checklist}
+\section{Reproducibility Checklist}
 \label{app:reproducibility}
 
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
@@ -755,7 +761,7 @@ These thresholds were selected to optimize the balance between data quality and 
   \item \textbf{Software versions}: PyTorch 2.1, TRL 0.29.0, PEFT 0.18.1, Transformers 4.36.
 \end{itemize}
 
-\section{Appendix: Ethics and Broader Impact}
+\section{Ethics and Broader Impact}
 \label{app:ethics}
 
 \ours{} uses LLM judges to filter training data, which introduces a risk of amplifying biases present in the judge models.
