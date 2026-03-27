@@ -49,9 +49,9 @@
 
 \begin{abstract}
 %
-Preference optimization is the dominant paradigm for aligning large language models, yet standard preference datasets are rife with mislabeled pairs, ambiguous rankings, and borderline cases.
+Preference optimization is the standard approach for aligning large language models, yet widely-used preference datasets contain mislabeled pairs, ambiguous rankings, and borderline cases.
 Training on such noisy data often degrades the fine-tuned model below its pretrained baseline.
-We propose \ours{}, a pipeline that filters preference data through multi-agent LLM consensus instead of scaling dataset size.
+\ours{} addresses this by filtering preference data through multi-agent LLM consensus rather than scaling dataset size.
 Given a set of prompts, \ours{} generates candidate responses from the policy model itself, scores each candidate along three orthogonal quality dimensions with independent LLM judges, flags reasoning flaws via a dedicated process critic, and retains only examples with high inter-judge agreement through a confidence gate---accepting 3.45\% of candidates (1,871 from over 54,000).
 The gated labels are used to train the policy with KTO\@.
 With $5$--$10\times$ fewer training examples than any baseline, \ours{} outperforms all compared methods on MT-Bench (7.62 vs.\ 7.25), AlpacaEval 2.0 (96.3\% vs.\ 95.8\%), IFEval (46.8\% vs.\ 44.2\%), and internal win-rate (85.3\% vs.\ 68.2\%).
@@ -86,12 +86,11 @@ We propose \ours{}, a pipeline built on this principle:
 
 After gating, 1,871 examples remain (compared to 10,000--20,000 for baselines) with a mean quality gap of 6.8 points between desirable and undesirable examples.
 
-Our contributions are as follows:
+Our contributions:
 \begin{enumerate}[leftmargin=*,itemsep=0.5ex]
-  \item We introduce a six-stage data-centric pipeline that constructs clean preference data via multi-agent scoring and confidence gating.
-  \item We show that this curated data, despite being $5$--$10\times$ smaller, leads to stronger models than any baseline across four benchmarks (MT-Bench, AlpacaEval~2.0, IFEval, internal evaluation).
-  \item We find that \ours{} is the \emph{only} method that improves over the pretrained base on MT-Bench---all baselines degrade it.
-  \item We ablate the key design choices (number of judges, gating threshold) and report inter-judge agreement statistics.
+  \item A six-stage data-centric pipeline that constructs clean preference data via multi-agent scoring and confidence gating.
+  \item Empirical evidence that this curated data, despite being $5$--$10\times$ smaller, produces stronger models than all baselines across four benchmarks---and is the only method that improves over the pretrained base on MT-Bench.
+  \item Ablations over number of judges and gating threshold, plus inter-judge agreement analysis, validating each design choice.
 \end{enumerate}
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -121,8 +120,8 @@ This aligns with the broader ``data-centric AI'' movement~\cite{zha2023datacentr
 \paragraph{LLM-Based Evaluation and Confidence Gating.}
 Using LLM-based judges for evaluation is standard in modern benchmarking~\cite{zheng2024judging,li2023alpacaeval}.
 Multi-agent evaluation has been explored in several contexts: for robustness~\cite{black2024multi}, for collaborative problem-solving~\cite{li2023expert}, and for debate~\cite{irving2018debate}.
-To our knowledge, none of these works use multi-agent consensus to \emph{gate training data} for preference optimization.
-Confidence-based filtering has roots in active learning~\cite{settles2009active} and curriculum learning~\cite{bengio2009curriculum}; we adapt the idea to a variance-based gate over multi-agent scores.
+None of these works use multi-agent consensus to \emph{gate training data} for preference optimization.
+\ours{} adapts confidence-based filtering---rooted in active learning~\cite{settles2009active} and curriculum learning~\cite{bengio2009curriculum}---to a variance-based gate over multi-agent scores.
 
 \paragraph{Reasoning and Process-Based Evaluation.}
 Process-based evaluation focuses on the \emph{steps} taken to reach an answer, rather than just the final answer~\cite{wang2023selfconsistency,cobbe2021training}.
@@ -151,21 +150,21 @@ Prompt Collection $\rightarrow$ On-Policy Generation $\rightarrow$ Multi-Agent S
 \subsection{Stage 1: Prompt Collection and Normalization}
 \label{sec:stage1}
 
-We combine prompts from two complementary sources:
+Prompts are drawn from two complementary sources:
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
   \item \textbf{UltraFeedback}~\cite{cui2023ultrafeedback}: 10,000 diverse instruction-following prompts.
   \item \textbf{HelpSteer2}~\cite{wang2024helpsteer2}: 5,000 prompts emphasizing helpfulness and quality.
 \end{itemize}
-We extract, deduplicate, and normalize the prompt text, yielding 14,272 unique prompts split 95\% train / 5\% validation.
-The diversity of sources reduces bias in downstream evaluation.
+After deduplication and normalization, 14,272 unique prompts remain, split 95\% train / 5\% validation.
+Source diversity reduces bias in downstream evaluation.
 
 \subsection{Stage 2: On-Policy Candidate Generation}
 \label{sec:stage2}
 
 For each prompt, we generate $k{=}4$ candidate responses using the policy backbone (Mistral-7B-Instruct-v0.2) with nucleus sampling ($T{=}0.8$, $p{=}0.95$).
-We sample from the \emph{same model} that will be fine-tuned, so the preference signal is calibrated to the model's own output distribution and avoids the distribution shift that arises when training on outputs from a stronger model.
+Sampling from the \emph{same model} that will be fine-tuned calibrates the preference signal to the model's own output distribution, avoiding the distribution shift that arises when training on outputs from a stronger model.
 
-To maximize throughput, we tile prompts and batch-generate all candidates in a single \texttt{model.generate()} call.
+Prompts are tiled and batch-generated in a single \texttt{model.generate()} call for throughput.
 This yields 54,236 training candidates and 2,852 validation candidates (see Appendix~\ref{app:reproducibility} for hardware details and throughput).
 
 \subsection{Stage 3: Multi-Agent Scoring}
@@ -242,8 +241,8 @@ Right: 1,871 gated examples (bimodal: peaks at $\sim$2.4 and $\sim$9.2)\vspace{2
 \subsection{Stage 6: Policy Training with KTO}
 \label{sec:stage6}
 
-We fine-tune the policy using Kahneman-Tversky Optimization (KTO)~\cite{ethayarajh2024kto}, which directly accepts binary labels and incorporates loss-aversion asymmetry from prospect theory.
-This is more natural than DPO for our quality-gated data, which produces binary desirable/undesirable labels rather than paired preferences.
+The policy is fine-tuned with Kahneman-Tversky Optimization (KTO)~\cite{ethayarajh2024kto}, which directly accepts binary labels and incorporates loss-aversion asymmetry from prospect theory.
+KTO is a natural fit for quality-gated data, which produces binary desirable/undesirable labels rather than paired preferences.
 
 \paragraph{Model Configuration.}
 Mistral-7B-Instruct-v0.2 (7.24B params) + LoRA~\cite{hu2022lora}:
@@ -279,7 +278,7 @@ The high margin reflects the clean signal: with no contradictory labels, the mod
 \subsection{Experimental Setup}
 
 \paragraph{Baselines.}
-All methods fine-tune Mistral-7B-Instruct-v0.2 with identical LoRA config. We compare against:
+All methods fine-tune Mistral-7B-Instruct-v0.2 with identical LoRA config. The baselines are:
 \begin{itemize}[leftmargin=*,itemsep=0.5ex]
   \item SFT (10k chosen responses)
   \item DPO (10k pairs, $\beta{=}0.1$)
@@ -325,13 +324,10 @@ Base (pretrained) & --- & 7.41 & 96.0\% & 41.2\% & --- \\
 \vspace{-0.3em}
 \end{table*}
 
-\ours{} achieves best performance across all four benchmarks:
-\begin{itemize}[leftmargin=*,itemsep=0.5ex]
-  \item \textbf{MT-Bench}: 7.62 (base: 7.41, best baseline: 7.25). \ours{} is the \emph{only} method that improves over base; all baselines degrade.
-  \item \textbf{AlpacaEval 2.0}: 96.3\% (base: 96.0\%, best: 95.8\%). Only fine-tuned method exceeding base.
-  \item \textbf{IFEval}: 46.8\% (base: 41.2\%, best baseline: 44.2\%). Rule-based evaluation eliminates judge bias.
-  \item \textbf{Internal}: 85.3\% (best baseline: 68.2\%). Demonstrates strong preference signal alignment.
-\end{itemize}
+\ours{} leads on all four benchmarks (Table~\ref{tab:main}).
+On MT-Bench, it scores 7.62 versus the pretrained base's 7.41---the \emph{only} method that improves over base; every baseline degrades it.
+AlpacaEval 2.0 (96.3\%) and IFEval (46.8\%) tell the same story, with IFEval's rule-based verification eliminating any concern about judge bias.
+The internal win-rate (85.3\% vs.\ 68.2\% for SimPO) shows the strongest preference signal alignment.
 
 \subsection{Per-Category Analysis}
 
@@ -474,13 +470,14 @@ Mean response length (tokens)       & 223 (des: 238, undes: 207) \\
 
 \subsection{Why Does Less Data Outperform More?}
 
-In UltraFeedback-binarized, many ``preferred'' responses are only marginally better than the rejected alternatives, and some pairs are mislabeled outright.
-A model trained on such data receives contradictory gradient signals---the same surface pattern is rewarded in one pair and penalized in another---producing a noisy optimization landscape.
+The ablation in Table~\ref{tab:abl_threshold} provides a direct answer: performance improves monotonically as the acceptance rate drops from 100\% to 3.45\%, then declines at 1\%.
+This U-shaped curve reveals two regimes.
+Above $\sim$5\%, noise from ambiguous examples dominates---the model receives contradictory gradient signals where the same surface pattern is rewarded in one pair and penalized in another.
+Below $\sim$2\%, the dataset is too small for the model to generalize despite high per-example quality.
+The 3.45\% operating point sits at the quality-diversity sweet spot.
 
-The confidence gate sidesteps this problem by discarding everything in the ambiguous middle range.
-With a quality gap of ${\sim}6.8$ points between desirable and undesirable examples, every retained pair pushes the model in a consistent direction.
-The pattern is not unique to our setting: LIMA~\cite{zhou2023lima} showed that 1,000 curated SFT examples suffice, and AlpaGasus~\cite{chen2024alpagasus} found 83\% of Alpaca data to be actively detrimental.
-Our results extend these findings to preference optimization, where the consequences of noise are arguably worse---contradictory preference pairs do not merely waste compute; they push the model \emph{below} its pretrained baseline, as the MT-Bench regression across all baselines confirms.
+The magnitude of the quality gap ($\sim$6.8 points) explains why training is so efficient: with no ambiguous examples in the 4--7 score range, every gradient update pushes the model in a consistent direction, yielding a reward margin of 10.96 (vs.\ 1.88 for DPO on 10k noisy pairs).
+This extends the LIMA~\cite{zhou2023lima} and AlpaGasus~\cite{chen2024alpagasus} findings to preference optimization, where noise is more pernicious: contradictory preference pairs do not merely waste compute but push the model \emph{below} its pretrained baseline, as the MT-Bench regression across all baselines confirms.
 
 \subsection{Role of the Process Critic}
 
@@ -518,12 +515,10 @@ The multi-agent scoring pipeline ($\sim$4 hours on 8 GPUs for 54k candidates) is
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented \ours{}, a data-centric pipeline for preference optimization that uses multi-agent scoring and confidence gating to construct a compact training set of 1,871 examples.
-Despite being $5$--$10\times$ smaller than any baseline dataset, this curated data produces the strongest model across all four benchmarks---and the only one that improves over the pretrained base on MT-Bench.
+\ours{} shows that multi-agent consensus filtering can reduce a 54k-candidate pool to 1,871 high-quality examples that outperform 5--10$\times$ larger baseline datasets on all four benchmarks---and produce the only model that improves over the pretrained base on MT-Bench.
 
-The practical takeaway is straightforward: before scaling up preference data collection, it is worth filtering what already exists.
-Multi-agent consensus provides a cheap, automated way to do so, and the resulting quality gains more than compensate for the reduced quantity.
-We believe these findings point to a broader opportunity in data-centric alignment, where progress comes not from better loss functions but from cleaner training signal.
+The practical implication is clear: before scaling preference data collection, filter what already exists.
+The broader lesson is that in preference optimization, data quality dominates data quantity---contradictory labels are not merely wasteful but actively harmful, and removing them yields disproportionate gains.
 
 % ══════════════════════════════════════════════════════════════════════════════
 % REFERENCES
