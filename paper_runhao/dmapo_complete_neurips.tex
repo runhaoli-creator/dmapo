@@ -17,6 +17,11 @@
 \usepackage{subcaption}
 \usepackage{lineno}
 \usepackage{xspace}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{patterns,calc}
+\usepgfplotslibrary{groupplots}
 
 \definecolor{darkblue}{rgb}{0, 0, 0.5}
 \hypersetup{colorlinks=true, citecolor=darkblue, linkcolor=darkblue, urlcolor=darkblue}
@@ -139,11 +144,8 @@ The pipeline generates candidates from the policy model, scores them with a pane
 
 \begin{figure*}[t]
 \centering
-% TODO: Replace with actual pipeline diagram
-\fbox{\parbox{0.9\textwidth}{\centering\vspace{3em}\textbf{[Pipeline Diagram Placeholder]}\\
-Prompt Collection $\rightarrow$ On-Policy Generation $\rightarrow$ Multi-Agent Scoring $\rightarrow$ Process Critic $\rightarrow$ Confidence Gating $\rightarrow$ KTO Training\\
-14,272 prompts $\rightarrow$ 54,236 candidates $\rightarrow$ 1,871 gated examples\vspace{3em}}}
-\caption{\textbf{Overview of the \ours{} pipeline.} Six stages transform diverse prompts into a compact, high-quality training set via multi-agent scoring and confidence gating. Only 3.45\% of candidates survive the gating process.}
+\includegraphics[width=\textwidth]{../pic.png}
+\caption{\textbf{Overview of the \ours{} pipeline and key result.} \textbf{(A)} Six stages transform 14,272 prompts into 1,871 high-quality training examples (3.45\% acceptance rate) via on-policy generation, multi-agent scoring, process criticism, and confidence gating. \textbf{(B)} MT-Bench results: every baseline degrades below the pretrained Mistral-7B base (7.41), while \ours{} is the only method to improve it (7.62) despite using $5\text{--}10\times$ fewer training examples.}
 \label{fig:pipeline}
 \end{figure*}
 
@@ -230,11 +232,47 @@ The resulting dataset is sharply bimodal with no ambiguous examples in the middl
 
 \begin{figure}[t]
 \centering
-% TODO: Replace with actual score distribution histogram
-\fbox{\parbox{0.9\columnwidth}{\centering\vspace{2.5em}\textbf{[Score Distribution Placeholder]}\\
-Left: all 54k candidates (bell curve around 5.5)\\
-Right: 1,871 gated examples (bimodal: peaks at $\sim$2.4 and $\sim$9.2)\vspace{2.5em}}}
-\caption{\textbf{Score distributions before and after confidence gating.} The gating process transforms a unimodal distribution into a highly polarized bimodal one, ensuring every training example carries unambiguous signal.}
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=2 by 1, horizontal sep=0.6cm},
+  width=0.52\columnwidth, height=3.8cm,
+  ymin=0,
+  xtick align=inside,
+  ytick align=inside,
+  tick label style={font=\footnotesize},
+  label style={font=\footnotesize},
+]
+% Left: all 54k candidates — approximately normal, mean~5.5
+\nextgroupplot[
+  title={\footnotesize All 54k candidates},
+  xlabel={Score},
+  ylabel={Density},
+  xmin=1, xmax=10,
+  ymax=0.38,
+  fill=blue!20, draw=blue!60,
+]
+\addplot[ybar interval, fill=blue!20, draw=blue!60, bar width=0.9]
+  coordinates {
+    (1,0.02) (2,0.05) (3,0.10) (4,0.18) (5,0.30) (6,0.35)
+    (7,0.25) (8,0.15) (9,0.07) (10,0.02) (11,0)
+  };
+% Right: 1,871 gated examples — bimodal at ~2.4 and ~9.2
+\nextgroupplot[
+  title={\footnotesize Gated 1,871 examples},
+  xlabel={Score},
+  xmin=1, xmax=10,
+  ymax=0.42,
+  fill=orange!30, draw=orange!70,
+  yticklabel pos=right,
+]
+\addplot[ybar interval, fill=orange!30, draw=orange!70, bar width=0.9]
+  coordinates {
+    (1,0.10) (2,0.32) (3,0.38) (4,0.08) (5,0.02) (6,0.02)
+    (7,0.06) (8,0.30) (9,0.40) (10,0.14) (11,0)
+  };
+\end{groupplot}
+\end{tikzpicture}
+\caption{\textbf{Score distributions before and after confidence gating.} Gating transforms a near-unimodal distribution (mean $\approx$5.5) into a bimodal one with peaks at $\approx$2.4 and $\approx$9.2, eliminating ambiguous training signal.}
 \label{fig:score_dist}
 \end{figure}
 
