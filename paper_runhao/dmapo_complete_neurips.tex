@@ -119,7 +119,7 @@ This aligns with the broader ``data-centric AI'' movement~\cite{zha2023datacentr
 
 \paragraph{LLM-Based Evaluation and Confidence Gating.}
 Using LLM-based judges for evaluation is standard in modern benchmarking~\cite{zheng2024judging,li2023alpacaeval}.
-Multi-agent evaluation has been explored in several contexts: for robustness~\cite{black2024multi}, for collaborative problem-solving~\cite{li2023expert}, and for debate~\cite{irving2018debate}.
+Multi-agent evaluation has been explored for collaborative problem-solving~\cite{li2023expert} and for debate~\cite{irving2018debate}.
 None of these works use multi-agent consensus to \emph{gate training data} for preference optimization.
 \ours{} adapts confidence-based filtering---rooted in active learning~\cite{settles2009active} and curriculum learning~\cite{bengio2009curriculum}---to a variance-based gate over multi-agent scores.
 
@@ -528,7 +528,7 @@ The broader lesson is that in preference optimization, data quality dominates da
 \begin{thebibliography}{25}
 
 \bibitem[Azar et~al.(2023)]{azar2023general}
-Azar, M.~G., Ghasemipour, S.~K.~B., Nowozin, S., \& Szepesv\'ari, C. (2023).
+Azar, M.~G., Rowland, M., Piot, B., Guo, D., Calandriello, D., Valko, M., \& Munos, R. (2023).
 A general theoretical paradigm to understand learning from human preferences.
 \textit{arXiv preprint arXiv:2310.12036}.
 
@@ -537,10 +537,8 @@ Bengio, Y., Louradour, J., Collobert, R., \& Weston, J. (2009).
 Curriculum learning.
 \textit{Proceedings of the 26th International Conference on Machine Learning}, pp. 41--48.
 
-\bibitem[Black et~al.(2024)]{black2024multi}
-Black, S., Gao, L., Wang, P., Leahy, C., \& Biderman, S. (2024).
-Training language models with multi-agent evaluation for robustness.
-\textit{arXiv preprint arXiv:2401.00000}.
+% [CITATION REMOVED -- fabricated: no paper with this title/arXiv ID exists]
+% black2024multi was removed; references in text updated to remove \cite{black2024multi}
 
 \bibitem[Chen et~al.(2024)]{chen2024alpagasus}
 Chen, L., Li, S., Yan, J., Wang, H., Gunaratna, K., Yadav, V., Tang, Z., Srinivasan, V., Zhou, T., Huang, H., \& Jin, H. (2024).
@@ -563,19 +561,19 @@ Enhancing chat language models by scaling high-quality instructional conversatio
 \textit{arXiv preprint arXiv:2305.14233}.
 
 \bibitem[Ethayarajh et~al.(2024)]{ethayarajh2024kto}
-Ethayarajh, K., Xu, Y., Jurafsky, D., \& Liang, P. (2024).
-How to train language models on preference data.
-\textit{arXiv preprint arXiv:2404.14657}.
+Ethayarajh, K., Xu, W., Muennighoff, N., Jurafsky, D., \& Kiela, D. (2024).
+KTO: Model alignment as prospect theoretic optimization.
+\textit{arXiv preprint arXiv:2402.01306}.
 
 \bibitem[Hong et~al.(2024)]{hong2024orpo}
-Hong, J., Lee, M., \& Thawani, A. (2024).
+Hong, J., Lee, N., \& Thorne, J. (2024).
 ORPO: Monolithic preference optimization without reference model.
-\textit{arXiv preprint arXiv:2403.07691}.
+\textit{Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing (EMNLP)}.
 
 \bibitem[Hu et~al.(2022)]{hu2022lora}
 Hu, E.~J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., \ldots{} \& Chen, W. (2022).
 LoRA: Low-rank adaptation of large language models.
-\textit{arXiv preprint arXiv:2106.09685}.
+\textit{International Conference on Learning Representations (ICLR)}.
 
 \bibitem[Irving et~al.(2018)]{irving2018debate}
 Irving, G., Christiano, P., \& Leike, J. (2018).
@@ -603,9 +601,9 @@ What makes good data for alignment? A comprehensive study of automatic data sele
 \textit{International Conference on Learning Representations (ICLR)}.
 
 \bibitem[Meng et~al.(2024)]{meng2024simpo}
-Meng, Y., Xie, K., Zhao, Y., Song, Y., Zhang, Y., Wang, L., \ldots{} \& Zhang, D. (2024).
+Meng, Y., Xia, M., \& Chen, D. (2024).
 SimPO: Simple preference optimization with a reference-free reward.
-\textit{arXiv preprint arXiv:2405.14734}.
+\textit{Advances in Neural Information Processing Systems (NeurIPS)}.
 
 \bibitem[Ouyang et~al.(2022)]{ouyang2022training}
 Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C.~L., Mishkin, P., \ldots{} \& Leike, J. (2022).
@@ -619,18 +617,18 @@ Direct preference optimization: Your language model is secretly a reward model.
 
 \bibitem[Settles(2009)]{settles2009active}
 Settles, B. (2009).
-\textit{Active Learning}.
-Morgan \& Claypool.
+Active learning literature survey.
+\textit{Computer Sciences Technical Report 1648}, University of Wisconsin-Madison.
 
 \bibitem[Wang et~al.(2023)]{wang2023selfconsistency}
 Wang, X., Wei, J., Schuurmans, D., Le, Q., Chi, E., Narang, S., \ldots{} \& Zhou, D. (2023).
 Self-consistency improves chain of thought reasoning in language models.
-\textit{arXiv preprint arXiv:2203.11171}.
+\textit{International Conference on Learning Representations (ICLR)}.
 
 \bibitem[Wang et~al.(2024)]{wang2024helpsteer2}
-Wang, Y., Song, Y., Zhai, X., Beyer, L., \& Dosovitskiy, A. (2024).
+Wang, Z., Dong, Y., Delalleau, O., Zeng, J., Shen, G., Egert, D., Zhang, J.~J., Sreedhar, M.~N., \& Kuchaiev, O. (2024).
 HelpSteer2: Open-source dataset for training top-performing reward models.
-\textit{arXiv preprint arXiv:2406.08522}.
+\textit{arXiv preprint arXiv:2406.08673}.
 
 \bibitem[Zha et~al.(2023)]{zha2023datacentric}
 Zha, D., Bhat, Z.~P., Lai, K.~H., Yang, F., Jiang, Z., Zhong, S., \& Hu, X. (2023).
