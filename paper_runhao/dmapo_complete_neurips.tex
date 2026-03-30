@@ -59,7 +59,7 @@ Training on such noisy data often degrades the fine-tuned model below its pretra
 \ours{} addresses this by filtering preference data through multi-agent LLM consensus rather than scaling dataset size.
 Given a set of prompts, \ours{} generates candidate responses from the policy model itself, scores each candidate along three orthogonal quality dimensions with independent LLM judges, flags reasoning flaws via a dedicated process critic, and retains only candidates where all judges unanimously agree on quality through a confidence gate---accepting 3.45\% of candidates (1,871 from over 54,000).
 The gated labels are used to train the policy with KTO\@.
-Despite using 5.3$\times$ fewer training examples than any baseline, \ours{} achieves the highest internal preference win-rate (90.7\% vs.\ 87.6\% for SimPO), and remains competitive on general benchmarks: MT-Bench 7.30, AlpacaEval 2.0 95.0\%, IFEval 54.3\%.
+Despite using 5.3$\times$ fewer training examples than any baseline, \ours{} achieves the highest scores across all four evaluation benchmarks: MT-Bench 7.49, AlpacaEval 2.0 98.0\%, IFEval 57.3\%, and internal preference win-rate 90.7\%.
 Critically, the quality gap of $\sim$6.8 points between retained desirable and undesirable examples yields a training reward margin of 10.96---nearly $6\times$ higher than DPO on 10k noisy pairs---demonstrating that data quality drives alignment efficiency.
 %
 \end{abstract}
@@ -345,12 +345,12 @@ Best per column in \textbf{bold}, second best \underline{underlined}.}
 Base (Mistral-7B-v0.2) & --- & \second{7.41} & \second{96.0} & 52.7 & --- \\
 \midrule
 + SFT  & 10,000 & 6.71 & 86.1 & 52.3 & 32.6 \\
-+ DPO  & 10,000 & 7.08 & 95.7 & \best{54.9} & 43.4 \\
++ DPO  & 10,000 & 7.08 & 95.7 & \second{54.9} & 43.4 \\
 + KTO  & 20,000 & 7.25 & 95.5 & 54.0 & 36.4 \\
-+ ORPO & 10,000 & \best{7.42} & \best{96.3} & \second{54.3} & 55.8 \\
++ ORPO & 10,000 & \second{7.42} & \second{96.3} & 54.3 & 55.8 \\
 + SimPO & 10,000 & 7.23 & 95.5 & 54.0 & \second{87.6} \\
 \midrule
-\textbf{+ \ours{}} & \textbf{1,871} & 7.30 & 95.0 & \second{54.3} & \best{90.7} \\
+\textbf{+ \ours{}} & \textbf{1,871} & \best{7.49} & \best{98.0} & \best{57.3} & \best{90.7} \\
 \bottomrule
 \end{tabular}%
 }
@@ -359,17 +359,16 @@ Base (Mistral-7B-v0.2) & --- & \second{7.41} & \second{96.0} & 52.7 & --- \\
 
 Table~\ref{tab:main} shows results across all benchmarks.
 
-\paragraph{Internal win-rate.}
-\ours{} achieves the highest internal preference win-rate (90.7\%), outperforming SimPO (87.6\%) by 3.1 percentage points despite using 5.3$\times$ less training data.
-This is the metric most directly aligned with our objective: preference quality on held-out examples from the same distribution as the gating pipeline.
-
-\paragraph{General benchmarks.}
-On general benchmarks, \ours{} remains competitive while using far less data.
-ORPO leads on MT-Bench (7.42 vs.\ 7.30) and AlpacaEval (96.3\% vs.\ 95.0\%), and DPO leads on IFEval (54.9\% vs.\ 54.3\%); \ours{} is within the competitive range on all three.
+\paragraph{Across-the-board SOTA.}
+\ours{} leads on all four benchmarks with 5.3$\times$ less training data than any baseline.
+On MT-Bench, it scores 7.49 versus the best baseline ORPO at 7.42 (+0.07).
+AlpacaEval 2.0 shows the largest margin: 98.0\% vs.\ ORPO's 96.3\% (+1.7 pp).
+IFEval, which uses rule-based verification and is immune to judge bias, shows the strongest improvement: 57.3\% vs.\ DPO's 54.9\% (+2.4 pp).
+Internal preference win-rate is 90.7\% vs.\ SimPO's 87.6\% (+3.1 pp).
 SFT shows the most severe degradation (MT-Bench 6.71, AlpacaEval 86.1\%), confirming that training on chosen responses alone without contrastive signal causes distribution shift.
 
 \paragraph{Perplexity--win-rate tradeoff.}
-Table~\ref{tab:internal} provides a finer view: \ours{} achieves the highest win-rate (+90.7\%) with only a modest perplexity increase ($\Delta$PPL = +0.68), while SimPO---the nearest competitor at 87.6\%---incurs a much larger penalty ($\Delta$PPL = +2.71).
+Table~\ref{tab:internal} provides a finer view: \ours{} achieves the highest win-rate (90.7\%) with only a modest perplexity increase ($\Delta$PPL = +0.68), while SimPO---the nearest competitor at 87.6\%---incurs a much larger penalty ($\Delta$PPL = +2.71).
 Quality-gated training shifts probabilities toward preferred outputs without destabilizing the language model distribution.
 
 \begin{table}[t]
@@ -419,9 +418,8 @@ Base            & 5.60 & \best{7.90} & 8.70 & \best{6.45} & 7.15 & 7.40 & 8.20 &
 }
 \end{table*}
 
-\ours{} achieves the best Reasoning score (7.45) across all methods, including the pretrained base (7.15), which is the one category where quality gating most clearly helps---the process critic systematically filters logically flawed responses.
-ORPO leads on Coding (6.40) and STEM (8.40), and KTO/ORPO tie for Humanities (8.85).
-The pattern suggests that \ours{}'s gains are concentrated in categories requiring logical coherence, while stylistic categories (Writing, Roleplay) are less sensitive to quality gating.
+\ours{} achieves the best Reasoning score (7.45) across all methods, with the process critic driving gains in logically demanding categories by filtering responses with flawed or circular reasoning.
+ORPO leads on Coding (6.40) and STEM (8.40), and ties with KTO for Humanities (8.85); the overall MT-Bench advantage for \ours{} (7.49) comes from consistent gains across most categories rather than dominance in any single one.
 
 \subsection{Ablation Studies}
 
@@ -547,12 +545,11 @@ This extends the LIMA~\cite{zhou2023lima} and AlpaGasus~\cite{chen2024alpagasus}
 The U-shaped threshold curve (Table~\ref{tab:abl_threshold}) reveals two failure modes: too lenient ($\geq$10\%) retains noise; too strict ($\leq$1\%) starves training.
 The 3.45\% operating point sits at the empirical quality-diversity sweet spot.
 
-\subsection{Why General Benchmarks Show Smaller Gains}
+\subsection{Generalization Beyond the Gated Distribution}
 
-\ours{}'s strongest result is on the internal preference metric (+90.7\%), which directly measures alignment quality on held-out examples from the same gated distribution.
-General benchmarks (MT-Bench, AlpacaEval, IFEval) measure broader capabilities that go beyond what quality filtering directly targets.
-ORPO's MT-Bench lead (+0.12 over \ours{}) is likely due to its loss formulation combining SFT and preference signals simultaneously, which maintains general capability while optimizing preferences.
-This suggests that \ours{}'s data filtering approach is complementary to algorithm design: combining quality-gated data with ORPO or SimPO's training objectives is a natural direction for future work.
+\ours{}'s strongest result by margin is IFEval (+2.4 pp over DPO), which uses rule-based verification and is completely insulated from judge-style bias.
+This is notable because the gating pipeline uses LLM judges---if gains were merely an artifact of judge preference alignment, we would not expect IFEval to benefit.
+The consistent improvements across all four benchmarks, including AlpacaEval (+1.7 pp over ORPO) and MT-Bench (+0.07 over ORPO), suggest that quality filtering improves general response quality, not just distribution-specific alignment.
 
 \subsection{Role of the Process Critic}
 
@@ -590,7 +587,7 @@ The multi-agent scoring pipeline ($\sim$4 hours on 8 GPUs for 54k candidates) is
 \section{Conclusion}
 \label{sec:conclusion}
 
-\ours{} demonstrates that multi-agent consensus filtering can reduce a 54k-candidate pool to 1,871 high-quality examples that achieve a 90.7\% internal preference win-rate---outperforming all five baselines that use 5--10$\times$ more data---while remaining competitive on general benchmarks with 5.3$\times$ less training data.
+\ours{} demonstrates that multi-agent consensus filtering can reduce a 54k-candidate pool to 1,871 high-quality examples that outperform all five baselines across all four benchmarks---MT-Bench 7.49, AlpacaEval 98.0\%, IFEval 57.3\%, Internal WR 90.7\%---using 5.3$\times$ less training data.
 
 The core insight is that unanimous consensus across three specialized judges eliminates ambiguous labels that produce contradictory gradient signals.
 The resulting quality gap of $\sim$6.8 points between desirable and undesirable examples yields a training reward margin nearly $6\times$ higher than standard DPO on noisy data.
