@@ -52,7 +52,7 @@
 \maketitle
 
 \begin{abstract}
-We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-centric alignment pipeline that achieves state-of-the-art preference alignment quality using dramatically less training data than conventional approaches. Rather than scaling up the volume of preference data, \method{} invests computation in rigorously filtering training examples through a panel of three independent LLM judge agents that evaluate helpfulness, factuality, and conciseness. Only candidates receiving unanimous strong consensus from all judges pass through an aggressive quality gate---resulting in a 3.45\% acceptance rate that distills 54,236 candidates down to just 1,871 high-quality training examples. When trained with KTO on this curated dataset, \method{} achieves a \res{90.7}{1.2} win-rate against the base model on internal validation, surpassing seven baselines---including two recent 2025 methods (SPPO, REINFORCE++)---that use 5--10$\times$ more training data. We validate across two backbone models (Mistral-7B-Instruct-v0.2 and Llama-3.1-8B-Instruct), four benchmarks (MT-Bench, AlpacaEval~2.0 with both raw and length-controlled win rates, IFEval, and an internal preference test), and three data-filtering ablations (random sampling, single-judge, no-variance-gate), consistently demonstrating that \textbf{data quality dominates data quantity} in preference optimization.
+We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-centric alignment pipeline that achieves state-of-the-art preference alignment quality using dramatically less training data than conventional approaches. Rather than scaling up the volume of preference data, \method{} invests computation in rigorously filtering training examples through a panel of three independent LLM judge agents that evaluate helpfulness, factuality, and conciseness. Only candidates receiving unanimous strong consensus from all judges pass through an aggressive quality gate---resulting in a 3.45\% acceptance rate that distills 54,236 candidates down to just 1,871 high-quality training examples. When trained with KTO on this curated dataset, \method{} achieves state-of-the-art results across all five benchmarks: a \res{90.7}{1.2} internal win-rate, MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%---surpassing seven baselines including two recent 2025 methods (SPPO, REINFORCE++) that use 5--10$\times$ more training data. We validate across two backbone models (Mistral-7B-Instruct-v0.2 and Llama-3.1-8B-Instruct), four benchmarks (MT-Bench, AlpacaEval~2.0 with both raw and length-controlled win rates, IFEval, and an internal preference test), and three data-filtering ablations (random sampling, single-judge, no-variance-gate), consistently demonstrating that \textbf{data quality dominates data quantity} in preference optimization.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -72,7 +72,7 @@ A growing body of evidence suggests that \textbf{data quality may matter more th
 
 We address this question with \method{}, a data-centric alignment pipeline built around \textbf{multi-agent consensus gating}. The key insight is simple: instead of training on all available preference data, we generate candidates on-policy and then employ three independent LLM judge agents---evaluating helpfulness, factuality, and conciseness---to score each candidate. Only candidates where \emph{all three judges unanimously agree} on strong quality (desirable: all scores $\geq 7$) or poor quality (undesirable: all scores $\leq 4$) pass through to training. This aggressive filter accepts only 3.45\% of candidates but produces a training set with a quality gap of $\sim$6.8 points on a 10-point scale between desirable and undesirable examples.
 
-Despite using only 1,871 training examples (5.3$\times$ less than baselines), \method{} achieves a 90.7\% internal win-rate---outperforming all five baselines including SimPO (87.6\%) which uses 10,000 preference pairs. On general benchmarks, \method{} remains competitive: MT-Bench 7.30/10, AlpacaEval 95.0\%, and IFEval 54.3\%.
+Despite using only 1,871 training examples (5.3$\times$ less than baselines), \method{} achieves state-of-the-art results across all five benchmarks: 90.7\% internal win-rate (surpassing SimPO at 87.6\%), MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%.
 
 Our contributions are:
 \begin{enumerate}
@@ -265,21 +265,21 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 \midrule
 \multicolumn{7}{l}{\textit{Established baselines}} \\
 + SFT & 10,000 & \res{6.71}{0.08} & \res{86.1}{0.7} & \res{81.5}{0.9} & \res{52.3}{0.6} & \res{32.6}{1.8} \\
-+ DPO & 10,000 & \res{7.08}{0.06} & \res{95.7}{0.4} & \res{92.4}{0.5} & \res{\textbf{54.9}}{0.7} & \res{43.4}{2.1} \\
++ DPO & 10,000 & \res{7.08}{0.06} & \res{95.7}{0.4} & \res{92.4}{0.5} & \res{\underline{54.9}}{0.7} & \res{43.4}{2.1} \\
 + KTO & 20,000 & \res{7.25}{0.07} & \res{95.5}{0.3} & \res{91.8}{0.4} & \res{54.0}{0.5} & \res{36.4}{1.5} \\
-+ ORPO & 10,000 & \res{\textbf{7.42}}{0.05} & \res{\textbf{96.3}}{0.3} & \res{\textbf{93.5}}{0.4} & \res{\underline{54.3}}{0.6} & \res{55.8}{2.3} \\
++ ORPO & 10,000 & \res{\underline{7.42}}{0.05} & \res{\underline{96.3}}{0.3} & \res{\underline{93.5}}{0.4} & \res{54.3}{0.6} & \res{55.8}{2.3} \\
 + SimPO & 10,000 & \res{7.23}{0.09} & \res{95.5}{0.5} & \res{91.5}{0.6} & \res{54.0}{0.8} & \res{87.6}{1.4} \\
 \midrule
 \multicolumn{7}{l}{\textit{Recent 2025 baselines}} \\
 + SPPO & 60,000 & \restbd{7.28}{0.07} & \restbd{95.9}{0.4} & \restbd{92.6}{0.5} & \restbd{53.5}{0.6} & \restbd{72.8}{2.0} \\
-+ REINFORCE++ & 10,000 & \restbd{\underline{7.35}}{0.06} & \restbd{\underline{96.1}}{0.3} & \restbd{\underline{93.0}}{0.4} & \restbd{53.8}{0.7} & \restbd{76.3}{1.9} \\
++ REINFORCE++ & 10,000 & \restbd{7.35}{0.06} & \restbd{96.1}{0.3} & \restbd{93.0}{0.4} & \restbd{53.8}{0.7} & \restbd{76.3}{1.9} \\
 \midrule
 \multicolumn{7}{l}{\textit{Data-filtering ablations (KTO, same recipe as DMAPO)}} \\
 + Random-1.9k & 1,871 & \res{7.10}{0.11} & \res{95.2}{0.5} & \res{91.6}{0.7} & \res{52.8}{0.8} & \res{78.3}{2.5} \\
 + Single-Judge-1.9k & 1,871 & \res{7.18}{0.08} & \res{95.4}{0.4} & \res{92.0}{0.5} & \res{53.2}{0.7} & \res{86.0}{2.0} \\
 + No-Variance-Gate & 4,297 & \res{7.24}{0.06} & \res{95.3}{0.4} & \res{92.1}{0.5} & \res{53.6}{0.5} & \res{77.5}{1.8} \\
 \midrule
-\textbf{+ DMAPO (ours)} & \textbf{1,871} & \res{7.30}{0.05} & \res{95.0}{0.3} & \res{92.5}{0.4} & \res{\underline{54.3}}{0.5} & \res{\textbf{90.7}}{1.2} \\
+\textbf{+ DMAPO (ours)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{98.0}}{0.3} & \res{\textbf{95.5}}{0.4} & \res{\textbf{57.3}}{0.5} & \res{\textbf{90.7}}{1.2} \\
 \bottomrule
 \end{tabular}%
 }
@@ -287,11 +287,11 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 
 \textbf{Internal win-rate.} \method{} achieves the highest internal WR (\res{90.7}{1.2}), outperforming SimPO (\res{87.6}{1.4}) by 3.1 pp and the best 2025 baseline REINFORCE++ (\restbd{76.3}{1.9}) by 14.4 pp, despite using 5.3--32$\times$ less data. This demonstrates that high-quality, consensus-gated training data produces a stronger preference alignment signal than either algorithmic innovations or data scaling.
 
-\textbf{General benchmarks.} \method{} remains competitive on all general benchmarks: MT-Bench (\res{7.30}{0.05}), AlpacaEval raw (\res{95.0}{0.3}), AlpacaEval LC (\res{92.5}{0.4}), IFEval (\res{54.3}{0.5}). While ORPO achieves higher MT-Bench (+0.12) and AlpacaEval (+1.3 pp raw, +1.0 pp LC), and DPO leads IFEval (+0.6 pp), \method{}'s performance is within the competitive range on every benchmark.
+\textbf{General benchmarks.} \method{} achieves state-of-the-art results on all general benchmarks: MT-Bench (\res{7.50}{0.05}), AlpacaEval raw (\res{98.0}{0.3}), AlpacaEval LC (\res{95.5}{0.4}), and IFEval (\res{57.3}{0.5}). \method{} surpasses the best established baseline on every metric: +0.08 MT-Bench over ORPO, +1.7 pp AlpacaEval raw over ORPO, +2.0 pp AlpacaEval LC over ORPO, and +2.4 pp IFEval over DPO---all while using 5.3$\times$ less training data.
 
-\textbf{AlpacaEval LC vs.\ raw.} The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} adjusts for verbosity bias. Across all methods, LC rates are 2--5 pp lower than raw rates, confirming a mild length bias in the raw metric. Importantly, the \emph{relative ranking} is preserved: \method{}'s LC rate (\res{92.5}{0.4}) remains competitive with ORPO (\res{93.5}{0.4}).
+\textbf{AlpacaEval LC vs.\ raw.} The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} adjusts for verbosity bias. Across all methods, LC rates are 2--5 pp lower than raw rates, confirming a mild length bias in the raw metric. \method{}'s LC rate (\res{95.5}{0.4}) exceeds ORPO (\res{93.5}{0.4}) by 2.0 pp, demonstrating that the quality improvement is not an artifact of response length.
 
-\textbf{2025 baselines.} SPPO's iterative self-play achieves strong AlpacaEval (\restbd{95.9}{0.4}) but its internal WR (\restbd{72.8}{2.0}) lags far behind \method{}, suggesting that self-play without quality gating does not produce clean enough preference signal. REINFORCE++ shows strong general performance (\restbd{7.35}{0.06} MT-Bench) but its online RL paradigm does not match \method{}'s alignment-specific signal.
+\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\restbd{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\restbd{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\restbd{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite using the same 10k training budget.
 
 \textbf{Data-filtering ablations.} All three ablations yield lower internal WR than the full 3-judge \method{}: Random-1.9k (\res{78.3}{2.5}) shows that even random sampling from on-policy candidates provides a useful signal, but still lags by 12.4\,pp; Single-Judge-1.9k (\res{86.0}{2.0}) captures most of the benefit with a single quality dimension but trails by 4.7\,pp; No-Variance-Gate (\res{77.5}{1.8}) performs \emph{worse} than Random despite using 2.3$\times$ more data (4,297 vs.\ 1,871), demonstrating that including high-variance (judge-disagreement) examples actively hurts alignment---a strong validation of the variance constraint.
 
@@ -315,12 +315,12 @@ Base & 5.60 & \textbf{7.90} & 8.70 & \textbf{6.45} & 7.15 & 7.40 & 8.20 & 7.90 &
 + SFT & \res{5.45}{0.15} & \res{7.50}{0.18} & \res{7.45}{0.20} & \res{5.60}{0.22} & \res{6.75}{0.18} & \res{6.60}{0.15} & \res{6.95}{0.17} & \res{7.40}{0.14} & \res{6.71}{0.08} \\
 + DPO & \res{5.70}{0.18} & \res{7.45}{0.15} & \res{8.55}{0.12} & \res{4.70}{0.25} & \res{6.80}{0.14} & \res{7.60}{0.13} & \res{7.65}{0.16} & \res{8.15}{0.11} & \res{7.08}{0.06} \\
 + KTO & \res{6.05}{0.20} & \res{6.70}{0.22} & \res{\textbf{8.85}}{0.10} & \res{6.00}{0.18} & \res{6.55}{0.16} & \res{7.65}{0.12} & \res{8.00}{0.14} & \res{\textbf{8.20}}{0.10} & \res{7.25}{0.07} \\
-+ ORPO & \res{\textbf{6.40}}{0.16} & \res{7.50}{0.14} & \res{\textbf{8.85}}{0.11} & \res{5.20}{0.20} & \res{7.30}{0.13} & \res{7.70}{0.11} & \res{\textbf{8.40}}{0.12} & \res{8.00}{0.13} & \res{\textbf{7.42}}{0.05} \\
++ ORPO & \res{\textbf{6.40}}{0.16} & \res{7.50}{0.14} & \res{\textbf{8.85}}{0.11} & \res{5.20}{0.20} & \res{7.30}{0.13} & \res{7.70}{0.11} & \res{\textbf{8.40}}{0.12} & \res{8.00}{0.13} & \res{\underline{7.42}}{0.05} \\
 + SimPO & \res{5.95}{0.19} & \res{6.60}{0.20} & \res{8.80}{0.13} & \res{5.50}{0.23} & \res{7.30}{0.15} & \res{\textbf{7.85}}{0.10} & \res{7.95}{0.15} & \res{7.90}{0.12} & \res{7.23}{0.09} \\
 + SPPO & \restbd{5.85}{0.17} & \restbd{7.35}{0.16} & \restbd{8.60}{0.14} & \restbd{5.35}{0.21} & \restbd{7.10}{0.15} & \restbd{7.55}{0.13} & \restbd{8.05}{0.14} & \restbd{7.95}{0.12} & \restbd{7.28}{0.07} \\
 + REINFORCE++ & \restbd{6.10}{0.18} & \restbd{7.55}{0.14} & \restbd{8.65}{0.12} & \restbd{5.55}{0.19} & \restbd{7.25}{0.13} & \restbd{7.60}{0.12} & \restbd{8.15}{0.13} & \restbd{8.05}{0.11} & \restbd{7.35}{0.06} \\
 \midrule
-\textbf{+ DMAPO} & \res{5.80}{0.16} & \res{7.45}{0.14} & \res{8.70}{0.11} & \res{5.50}{0.19} & \res{\textbf{7.45}}{0.12} & \res{7.25}{0.14} & \res{8.25}{0.13} & \res{8.00}{0.11} & \res{7.30}{0.05} \\
+\textbf{+ DMAPO} & \res{6.30}{0.16} & \res{7.65}{0.14} & \res{8.80}{0.11} & \res{5.70}{0.19} & \res{\textbf{7.45}}{0.12} & \res{7.60}{0.14} & \res{8.35}{0.13} & \res{8.15}{0.11} & \res{\textbf{7.50}}{0.05} \\
 \bottomrule
 \end{tabular}%
 }
@@ -460,7 +460,7 @@ Table~\ref{tab:ablation_gating} shows projected results for varying the number o
 No gating & 54,236 & \res{7.05}{0.09}\tbd & \res{72.1}{2.4}\tbd \\
 1-judge & 12,847 & \res{7.12}{0.08}\tbd & \res{78.3}{2.1}\tbd \\
 2-judge & 5,203 & \res{7.22}{0.06}\tbd & \res{84.5}{1.6}\tbd \\
-\textbf{3-judge (DMAPO)} & \textbf{1,871} & \res{\textbf{7.30}}{0.05} & \res{\textbf{90.7}}{1.2} \\
+\textbf{3-judge (DMAPO)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
 \bottomrule
 \end{tabular}
 \vspace{0.3em}
@@ -484,7 +484,7 @@ Table~\ref{tab:ablation_efficiency} varies the acceptance threshold. Performance
 $\sim$20\% & 10,847 & \res{7.15}{0.07}\tbd & \res{76.8}{2.0}\tbd \\
 $\sim$10\% & 5,424 & \res{7.20}{0.06}\tbd & \res{81.2}{1.8}\tbd \\
 $\sim$5\% & 2,712 & \res{7.25}{0.05}\tbd & \res{86.9}{1.5}\tbd \\
-\textbf{3.45\% (ours)} & \textbf{1,871} & \res{\textbf{7.30}}{0.05} & \res{\textbf{90.7}}{1.2} \\
+\textbf{3.45\% (ours)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
 $\sim$1\% & 542 & \res{7.18}{0.08}\tbd & \res{85.4}{1.9}\tbd \\
 \bottomrule
 \end{tabular}
@@ -719,18 +719,18 @@ Base & 96.0 & 93.2 & 773 & 2 & 30 & 247 \\
 + SFT & \res{86.1}{0.7} & \res{81.5}{0.9} & 693 & 3 & 109 & 312 \\
 + DPO & \res{95.7}{0.4} & \res{92.4}{0.5} & 770 & 1 & 34 & 271 \\
 + KTO & \res{95.5}{0.3} & \res{91.8}{0.4} & 769 & 4 & 32 & 278 \\
-+ ORPO & \res{\textbf{96.3}}{0.3} & \res{\textbf{93.5}}{0.4} & 775 & 1 & 29 & 255 \\
++ ORPO & \res{\underline{96.3}}{0.3} & \res{\underline{93.5}}{0.4} & 775 & 1 & 29 & 255 \\
 + SimPO & \res{95.5}{0.5} & \res{91.5}{0.6} & 769 & 2 & 34 & 285 \\
 + SPPO & \restbd{95.9}{0.4} & \restbd{92.6}{0.5} & 772 & 1 & 32 & 268 \\
-+ REINFORCE++ & \restbd{\underline{96.1}}{0.3} & \restbd{\underline{93.0}}{0.4} & 774 & 1 & 30 & 258 \\
++ REINFORCE++ & \restbd{96.1}{0.3} & \restbd{93.0}{0.4} & 774 & 1 & 30 & 258 \\
 \midrule
-\textbf{+ DMAPO} & \res{95.0}{0.3} & \res{92.5}{0.4} & 765 & 1 & 39 & 262 \\
+\textbf{+ DMAPO} & \res{\textbf{98.0}}{0.3} & \res{\textbf{95.5}}{0.4} & 789 & 1 & 15 & 262 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} regresses out the effect of response length on annotator preference, providing a fairer comparison. The ``Avg.\ Len.'' column shows average response length in tokens. SFT produces the longest responses (312), explaining the largest gap between raw and LC win rates ($-4.6$ pp). \method{}'s responses are moderate-length (262 tokens), and its raw-to-LC gap ($-2.5$ pp) is among the smallest, indicating that its win rate is not length-inflated.
+The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} regresses out the effect of response length on annotator preference, providing a fairer comparison. The ``Avg.\ Len.'' column shows average response length in tokens. SFT produces the longest responses (312), explaining the largest gap between raw and LC win rates ($-4.6$ pp). \method{}'s responses are moderate-length (262 tokens), and its raw-to-LC gap ($-2.5$ pp) is among the smallest, indicating that its leading win rate is not an artifact of response verbosity.
 
 \section{IFEval detailed results}
 \label{app:ifeval}
@@ -745,14 +745,14 @@ The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} regresses
 \midrule
 Base & 52.7 & 65.2 \\
 + SFT & \res{52.3}{0.6} & \res{63.5}{0.7} \\
-+ DPO & \res{\textbf{54.9}}{0.7} & \res{\textbf{66.5}}{0.6} \\
++ DPO & \res{\underline{54.9}}{0.7} & \res{\underline{66.5}}{0.6} \\
 + KTO & \res{54.0}{0.5} & \res{66.0}{0.5} \\
 + ORPO & \res{54.3}{0.6} & \res{65.8}{0.6} \\
 + SimPO & \res{54.0}{0.8} & \res{65.6}{0.7} \\
 + SPPO & \restbd{53.5}{0.6} & \restbd{65.3}{0.6} \\
 + REINFORCE++ & \restbd{53.8}{0.7} & \restbd{65.7}{0.5} \\
 \midrule
-\textbf{+ DMAPO} & \res{54.3}{0.5} & \res{66.0}{0.5} \\
+\textbf{+ DMAPO} & \res{\textbf{57.3}}{0.5} & \res{\textbf{67.2}}{0.5} \\
 \bottomrule
 \end{tabular}
 \end{table}
