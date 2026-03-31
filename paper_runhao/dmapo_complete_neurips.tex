@@ -52,13 +52,13 @@
 \maketitle
 
 \begin{abstract}
-We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-centric alignment pipeline that achieves state-of-the-art preference alignment quality using dramatically less training data than conventional approaches. Rather than scaling up the volume of preference data, \method{} invests computation in rigorously filtering training examples through a panel of three independent LLM judge agents that evaluate helpfulness, factuality, and conciseness. Only candidates receiving unanimous strong consensus from all judges pass through an aggressive quality gate---resulting in a 3.45\% acceptance rate that distills 54,236 candidates down to just 1,871 high-quality training examples. When trained with KTO on this curated dataset, \method{} achieves state-of-the-art results across all five benchmarks: a \res{90.7}{1.2} internal win-rate, MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%---surpassing seven baselines including two recent 2025 methods (SPPO, REINFORCE++) that use 5--10$\times$ more training data. We validate across two backbone models (Mistral-7B-Instruct-v0.2 and Llama-3.1-8B-Instruct), four benchmarks (MT-Bench, AlpacaEval~2.0 with both raw and length-controlled win rates, IFEval, and an internal preference test), and three data-filtering ablations (random sampling, single-judge, no-variance-gate), consistently demonstrating that \textbf{data quality dominates data quantity} in preference optimization.
+We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-centric alignment pipeline that achieves state-of-the-art preference alignment quality using dramatically less training data than conventional approaches. Rather than scaling up the volume of preference data, \method{} invests computation in rigorously filtering training examples through a panel of three independent LLM judge agents that evaluate helpfulness, factuality, and conciseness. Only candidates receiving unanimous strong consensus from all judges pass through an aggressive quality gate---resulting in a 3.45\% acceptance rate that distills 54,236 candidates down to just 1,871 high-quality training examples. When trained with KTO on this curated dataset, \method{} achieves state-of-the-art results across all four benchmarks: a \res{90.7}{1.2} internal win-rate, MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%---surpassing seven baselines including two recent 2025 methods (SPPO, REINFORCE++) that use 5--10$\times$ more training data. We validate across two backbone models (Mistral-7B-Instruct-v0.2 and Llama-3.1-8B-Instruct), four benchmarks (MT-Bench, AlpacaEval~2.0 with both raw and length-controlled win rates, IFEval, and an internal preference test), and three data-filtering ablations (random sampling, single-judge, no-variance-gate), consistently demonstrating that \textbf{data quality dominates data quantity} in preference optimization.
 \end{abstract}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../pic.png}
-\caption{\textbf{Overview of the \method{} pipeline and key result.} \textbf{(A)} Six stages transform 14,272 prompts into 1,871 high-quality training examples (3.45\% acceptance rate) via on-policy generation, multi-agent scoring, process criticism, and confidence gating. \textbf{(B)} MT-Bench results: DMAPO achieves the highest internal preference win-rate (90.7\%) with only 1,871 training examples---5.3$\times$ less than any baseline.}
+\caption{\textbf{Overview of the \method{} pipeline and key result.} \textbf{(A)} Seven stages transform 14,272 prompts into 1,871 high-quality training examples (3.45\% acceptance rate) via on-policy generation, multi-agent scoring, process criticism, and confidence gating. \textbf{(B)} Benchmark comparison: DMAPO achieves the highest internal preference win-rate (90.7\%) and MT-Bench score (7.50) with only 1,871 training examples---5.3$\times$ less than any baseline.}
 \label{fig:teaser}
 \end{figure*}
 
@@ -72,14 +72,14 @@ A growing body of evidence suggests that \textbf{data quality may matter more th
 
 We address this question with \method{}, a data-centric alignment pipeline built around \textbf{multi-agent consensus gating}. The key insight is simple: instead of training on all available preference data, we generate candidates on-policy and then employ three independent LLM judge agents---evaluating helpfulness, factuality, and conciseness---to score each candidate. Only candidates where \emph{all three judges unanimously agree} on strong quality (desirable: all scores $\geq 7$) or poor quality (undesirable: all scores $\leq 4$) pass through to training. This aggressive filter accepts only 3.45\% of candidates but produces a training set with a quality gap of $\sim$6.8 points on a 10-point scale between desirable and undesirable examples.
 
-Despite using only 1,871 training examples (5.3$\times$ less than baselines), \method{} achieves state-of-the-art results across all five benchmarks: 90.7\% internal win-rate (surpassing SimPO at 87.6\%), MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%.
+Despite using only 1,871 training examples (5.3$\times$ less than baselines), \method{} achieves state-of-the-art results across all four benchmarks: 90.7\% internal win-rate (surpassing SimPO at 87.6\%), MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%.
 
 Our contributions are:
 \begin{enumerate}
     \item A \textbf{multi-agent scoring framework} where three specialized LLM judges independently evaluate response quality along complementary dimensions (helpfulness, factuality, conciseness).
     \item An \textbf{aggressive confidence gating mechanism} requiring unanimous consensus from all judges, producing training data with minimal label noise.
     \item \textbf{Empirical demonstration} that 1,871 quality-gated examples outperform 10k--20k conventionally collected examples on preference alignment, validated across \textbf{two backbone models} (Mistral-7B, Llama-3.1-8B) and \textbf{three data-filtering ablations}.
-    \item A \textbf{comprehensive comparison} against seven baselines---including five established methods (SFT, DPO, KTO, ORPO, SimPO) and two recent 2025 methods (SPPO, REINFORCE++)---with controlled experimental conditions across four evaluation benchmarks plus AlpacaEval length-controlled (LC) win rate.
+    \item A \textbf{comprehensive comparison} against seven baselines---including five established methods (SFT, DPO, KTO, ORPO, SimPO) and two recent 2025 methods (SPPO, REINFORCE++)---with controlled experimental conditions across four benchmarks (MT-Bench, AlpacaEval~2.0 raw and length-controlled win rates, IFEval, and internal preference evaluation).
 \end{enumerate}
 
 
@@ -291,7 +291,7 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 
 \textbf{AlpacaEval LC vs.\ raw.} The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} adjusts for verbosity bias. Across all methods, LC rates are 2--5 pp lower than raw rates, confirming a mild length bias in the raw metric. \method{}'s LC rate (\res{95.5}{0.4}) exceeds ORPO (\res{93.5}{0.4}) by 2.0 pp, demonstrating that the quality improvement is not an artifact of response length.
 
-\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\res{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\res{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\res{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite using the same 10k training budget.
+\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\res{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\res{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\res{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite REINFORCE++ using 5.3$\times$ more training examples (10k vs.\ 1,871).
 
 \textbf{Data-filtering ablations.} All three ablations yield lower internal WR than the full 3-judge \method{}: Random-1.9k (\res{78.3}{2.5}) shows that even random sampling from on-policy candidates provides a useful signal, but still lags by 12.4\,pp; Single-Judge-1.9k (\res{86.0}{2.0}) captures most of the benefit with a single quality dimension but trails by 4.7\,pp; No-Variance-Gate (\res{77.5}{1.8}) performs \emph{worse} than Random despite using 2.3$\times$ more data (4,297 vs.\ 1,871), demonstrating that including high-variance (judge-disagreement) examples actively hurts alignment---a strong validation of the variance constraint.
 
@@ -354,7 +354,7 @@ Base  & --- & 6.43 & --- \\
 \end{tabular}
 \end{table}
 
-\textbf{PPL-WR tradeoff.} \method{} achieves the highest WR (\res{90.7}{1.2}) with only a modest PPL increase (+0.68), while SimPO---the nearest WR competitor at \res{87.6}{1.4}---incurs a much larger PPL penalty (+2.71). REINFORCE++ achieves strong WR (\res{76.3}{1.9}) with a moderate PPL increase (+1.02), but still trails \method{} by 14.4\,pp.  This suggests \method{}'s quality-gated signal shifts probabilities toward preferred outputs without destabilizing the overall language model distribution.
+\textbf{PPL-WR tradeoff.} \method{} achieves the highest WR (\res{90.7}{1.2}) with only a modest PPL increase (+0.68), while SimPO---the nearest WR competitor at \res{87.6}{1.4}---incurs a much larger PPL penalty (+2.71). REINFORCE++ achieves strong WR (\res{76.3}{1.9}) with a moderate PPL increase (+1.02), but still trails \method{} by 14.4\,pp. This suggests \method{}'s quality-gated signal shifts probabilities toward preferred outputs without destabilizing the overall language model distribution.
 
 
 \subsection{Pipeline statistics}
@@ -407,7 +407,7 @@ The mean Cohen's $\kappa$ of 0.613 indicates ``substantial agreement''~\citep{la
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Training outcomes.} \method{}'s extremely low loss (\res{0.037}{0.004}) indicates the model easily separates desirable from undesirable in the gated dataset. Mean$\pm$std over 4 seeds.}
+\caption{\textbf{Training outcomes.} \method{}'s extremely low loss (\res{0.037}{0.004}) indicates the model easily separates desirable from undesirable in the gated dataset. \emph{Margin}: average log-prob difference between desirable and undesirable responses. Mean$\pm$std over 4 seeds.}
 \label{tab:training}
 \vspace{0.5em}
 \begin{tabular}{l c c}
@@ -487,40 +487,7 @@ $\sim$5\% & 2,712 & \res{7.25}{0.05} & \res{86.9}{1.5} \\
 $\sim$1\% & 542 & \res{7.18}{0.08} & \res{85.4}{1.9} \\
 \bottomrule
 \end{tabular}
-\vspace{0.3em}
 \end{table}
-
-\subsection{Limitations}
-
-\textbf{Judge dependency.} The gated dataset quality depends on the judge model (Qwen3-8B). Using a stronger judge model could further improve data quality, and we leave cross-judge generalization as future work.
-
-\textbf{Compute overhead.} While KTO training is fast (1,871 examples, $\sim$0.6 GPU-hours), the generation and scoring phases add overhead. Table~\ref{tab:compute_cost} quantifies total pipeline cost. \method{}'s end-to-end compute ($\sim$13.8 GPU-hours) exceeds training-only baselines, but the curated dataset is reusable across multiple training runs, optimizers, and model generations, amortizing the curation cost over time.
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Compute cost comparison} (GPU-hours on RTX PRO 6000). \method{}'s total pipeline cost is higher than training-only baselines, but the curated dataset is reusable.}
-\label{tab:compute_cost}
-\vspace{0.5em}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{l cccc c}
-\toprule
-\textbf{Method} & \textbf{Generation} & \textbf{Scoring} & \textbf{Training} & \textbf{Total} & \textbf{Reusable?} \\
-\midrule
-SFT (10k) & --- & --- & 1.5 & 1.5 & --- \\
-DPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-KTO (20k) & --- & --- & 3.8 & 3.8 & --- \\
-ORPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-SimPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-SPPO (60k, 3 iter.) & --- & --- & 12.0 & 12.0 & --- \\
-REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
-\midrule
-\method{} & 6.4 & 6.8 & 0.6 & \textbf{13.8} & \checkmark \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-\textbf{Single epoch.} All experiments use 1 epoch. Multi-epoch training on the small gated set might yield improvements but risks overfitting.
 
 % ============================================================================
 \subsection{Score distribution analysis}
@@ -597,7 +564,7 @@ Figure~\ref{fig:train_dynamics} shows training loss curves for all methods. \met
 \legend{SFT, DPO, KTO, SimPO, \textbf{DMAPO}}
 \end{axis}
 \end{tikzpicture}
-\caption{\textbf{Training loss curves.} \method{}'s loss drops rapidly to $\sim$0.037, reflecting the clean, unambiguous signal in the quality-gated dataset. Baselines plateau at 5--30$\times$ higher loss due to noisier training data.}
+\caption{\textbf{Training loss curves} (representative subset; see Table~\ref{tab:training} for all methods). \method{}'s loss drops rapidly to $\sim$0.037, reflecting the clean, unambiguous signal in the quality-gated dataset. Shown baselines plateau at 5--30$\times$ higher loss due to noisier training data.}
 \label{fig:train_dynamics}
 \end{figure}
 
@@ -619,10 +586,10 @@ To validate that the data-centric advantage of \method{} generalizes beyond a si
 Base & --- & 7.85 & 97.2 & 58.5 & --- \\
 + DPO & 10k & \res{7.55}{0.07} & \res{96.8}{0.4} & \res{\textbf{59.2}}{0.6} & \res{48.7}{2.3} \\
 + KTO & 20k & \res{7.68}{0.06} & \res{96.5}{0.3} & \res{58.8}{0.5} & \res{41.3}{1.9} \\
-+ SimPO & 10k & \res{\textbf{7.72}}{0.08} & \res{\textbf{96.9}}{0.4} & \res{59.0}{0.7} & \res{\underline{85.2}}{1.6} \\
-+ SPPO & 60k & \res{7.60}{0.07} & \res{96.7}{0.4} & \res{58.6}{0.6} & \res{70.4}{2.2} \\
++ SimPO & 10k & \res{\underline{7.72}}{0.08} & \res{\textbf{96.9}}{0.4} & \res{59.0}{0.7} & \res{\underline{85.2}}{1.6} \\
++ SPPO & 60k & \res{7.60}{0.07} & \res{\underline{96.7}}{0.4} & \res{58.6}{0.6} & \res{70.4}{2.2} \\
 \midrule
-\textbf{+ DMAPO} & \textbf{1,871} & \res{\underline{7.80}}{0.05} & \res{96.6}{0.3} & \res{\underline{59.1}}{0.5} & \res{\textbf{89.5}}{1.4} \\
+\textbf{+ DMAPO} & \textbf{1,871} & \res{\textbf{7.80}}{0.05} & \res{96.6}{0.3} & \res{\underline{59.1}}{0.5} & \res{\textbf{89.5}}{1.4} \\
 \bottomrule
 \end{tabular}%
 }
@@ -664,6 +631,37 @@ Table~\ref{tab:qualitative} presents representative examples of candidates that 
 
 \textbf{Example 3 (Undesirable):} All judges agree the response is poor---oversimplified, factually misleading, and unhelpfully brief. The low variance (1.00) and unanimously low scores make this a clear negative example for contrastive training.
 
+\subsection{Limitations}
+
+\textbf{Judge dependency.} The gated dataset quality depends on the judge model (Qwen3-8B). Using a stronger judge model could further improve data quality, and we leave cross-judge generalization as future work.
+
+\textbf{Compute overhead.} While KTO training is fast (1,871 examples, $\sim$0.6 GPU-hours), the generation and scoring phases add overhead. Table~\ref{tab:compute_cost} quantifies total pipeline cost. \method{}'s end-to-end compute ($\sim$13.8 GPU-hours) exceeds training-only baselines, but the curated dataset is reusable across multiple training runs, optimizers, and model generations, amortizing the curation cost over time.
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Compute cost comparison} (GPU-hours on RTX PRO 6000). \method{}'s total pipeline cost is higher than training-only baselines, but the curated dataset is reusable.}
+\label{tab:compute_cost}
+\vspace{0.5em}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l cccc c}
+\toprule
+\textbf{Method} & \textbf{Generation} & \textbf{Scoring} & \textbf{Training} & \textbf{Total} & \textbf{Reusable?} \\
+\midrule
+SFT (10k) & --- & --- & 1.5 & 1.5 & --- \\
+DPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+KTO (20k) & --- & --- & 3.8 & 3.8 & --- \\
+ORPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SimPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SPPO (60k, 3 iter.) & --- & --- & 12.0 & 12.0 & --- \\
+REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
+\midrule
+\method{} & 6.4 & 6.8 & 0.6 & \textbf{13.8} & \checkmark \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Single epoch.} All experiments use 1 epoch. Multi-epoch training on the small gated set might yield improvements but risks overfitting.
 
 % ============================================================================
 \section{Conclusion}

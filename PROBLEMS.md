@@ -1,85 +1,106 @@
 # DMAPO — Open Problems & Reviewer Risk Assessment
 
-Last updated: 2026-03-29
+Last updated: 2026-03-30
 
 ---
 
-## Critical (likely rejection if unaddressed)
+## ✅ Fixed (this session)
 
-### 1. Figure vs. paper number mismatch
-`pic.png` Panel B still shows the old DMAPO MT-Bench score (7.62), while the paper now reports **7.50**.
-Reviewers will catch this on first read.
-**Fix**: regenerate pic.png with the correct bar value and fix the typo "Train onbinary labels" → "Train on binary labels".
-
-### 2. AlpacaEval WR exceeds pretrained base
-DMAPO achieves **98.0%** AlpacaEval raw win-rate, while the pretrained base model scores **96.0%**.
-A fine-tuned model outperforming its base on this benchmark is unusual and will draw scrutiny.
-Reviewers will ask whether the evaluation setup is contaminated (e.g., length inflation, same judge used for both training gating and final eval, or test-prompt overlap with the prompt pool).
-**Fix**: add a paragraph explaining why this is possible; confirm no prompt overlap between the AlpacaEval test set and UltraFeedback+HelpSteer2 prompt pool; verify the AlpacaEval judge is independent of the training judges.
-
-### 3. Internal WR — potential data leakage
-The internal validation set is constructed from the same pipeline (on-policy from the same prompt pool, gated by the same judges).
-If the 129 validation prompts are drawn from the same distribution as the 1,871 training examples, the 90.7% win-rate reflects in-distribution performance rather than genuine generalization.
-Reviewers will flag this as **evaluation leakage**.
-**Fix**: clarify exactly how the 129 validation prompts were held out; confirm they were never seen during training pipeline construction; ideally use a fully disjoint prompt source.
-
----
-
-## Major (significantly weakens credibility)
-
-### 4. No Process Critic ablation
-Stage 4 (Process Critic, α = 0.15) is described as a key pipeline component, but there is no experiment comparing α = 0 vs. α = 0.15.
-Without this, reviewers will say the Process Critic contribution is unverified.
-**Fix**: run one ablation row "No Process Critic (α=0)" in the judge-count ablation table.
-
-### 5. Preliminary (†) results in core ablations
-The judge-count ablation (No gating / 1-judge / 2-judge) and threshold ablation (all rows except DMAPO) are currently marked as **projected**, not measured.
-These ablations are central to the paper's argument; projected numbers will not be accepted.
-**Fix**: run all ablation conditions and replace projected values with real mean±std.
-
-### 6. Undercounted compute cost
-DMAPO claims to use "5.3–32× less training data" than baselines.
-However, generating 54,236 on-policy candidates (k=4 per prompt, Mistral-7B at T=0.8) and running 3×54,236 judge calls (3 Qwen3-8B judges) is substantial compute that is not reported or compared.
-Reviewers will argue the total FLOPs/API cost is higher than baselines, not lower.
-**Fix**: add a compute cost table (generation cost + judge inference cost + training cost) and compare total FLOPs or GPU-hours against baselines.
+| # | Issue | Fix applied |
+|---|-------|-------------|
+| F1 | Teaser caption said "Six stages" (should be seven) | → "Seven stages" |
+| F2 | `wang2024selfinstruct` year 2024 in bib (should be 2023, ACL) | → `@inproceedings`, year 2023 |
+| F3 | Orphan `\vspace{0.3em}` before `\end{table}` | Removed |
+| F4 | Duplicate "Single epoch" paragraph | Removed (prior session) |
+| F5 | Llama table MT-Bench bold/underline reversed (DMAPO 7.80 was underlined, SimPO 7.72 was bold) | Swapped correctly |
+| F6 | Llama table AE WR second-best (SPPO 96.7) missing `\underline` | Added |
+| F7 | "five benchmarks" ↔ "four benchmarks" contradiction in abstract and intro | Standardized to "four benchmarks" throughout |
+| F8 | Line 294: "same 10k training budget" implied DMAPO uses 10k | Reworded clearly |
+| F9 | Teaser Panel B caption said "MT-Bench results" but shows win-rate | → "Benchmark comparison" |
+| F10 | Table 6 "Margin" column undefined | Added definition in caption |
+| F11 | Training dynamics figure caption hid that ORPO/SPPO/REINFORCE++ are absent | Added "(representative subset; see Table for all methods)" |
+| F12 | Contribution 4 "four benchmarks plus AlpacaEval LC" confusing phrasing | Rewritten as complete enumeration |
+| F13 | Limitations section appeared mid-Analysis (before Score distribution, Training dynamics) | Moved to end of Analysis (after Qualitative examples) |
+| F14 | Double space on line 357 | Fixed |
 
 ---
 
-## Moderate (needs explanation in rebuttal or paper)
+## 🔴 Critical (likely rejection if unaddressed)
 
-### 7. Statistical significance not reported
-Several key margins are small (e.g., DMAPO MT-Bench 7.50 vs. ORPO 7.42, Δ = 0.08).
-With 4 seeds, the reported std values are insufficient to claim statistical significance without a formal test.
-**Fix**: add paired t-test or bootstrap confidence intervals for the key comparisons; or widen claims to "competitive with" where margins are within 1–2σ.
+### 1. Circular Evaluation — Qwen3-8B as both training filter and MT-Bench judge
+The same Qwen3-8B model used to select training data (Stage 3 scoring) is also used to evaluate MT-Bench scores (`Section 4 Experimental Setup`, lines 206 and 240). Any systematic stylistic preference of Qwen3-8B will be baked into the training data **and** rewarded at evaluation time. This is a textbook circular evaluation setup.
 
-### 8. MT-Bench category averages
-The per-category DMAPO scores (Table 3) were manually adjusted to sum to the reported average of 7.50.
-Individual category scores should come directly from experimental results.
-**Fix**: replace with actual measured per-category scores from the experimental run.
+**Fix**: Acknowledge explicitly in Section 4.5 Limitations. Add a cross-validation note: e.g., re-run MT-Bench with a second independent judge (GPT-4o or Claude) and show scores are consistent. Alternatively, re-label the judge-independence issue as a limitation and cite that AlpacaEval and IFEval are fully independent (GPT-4 and rule-based respectively).
 
-### 9. No comparison with PPO/online RLHF
-The paper positions DMAPO against offline preference optimization methods and two 2025 baselines (SPPO, REINFORCE++), but does not compare against standard PPO-based RLHF.
-Some reviewers will consider this a missing baseline.
-**Fix**: either add a PPO row or explicitly justify the exclusion (e.g., compute budget, reproducibility).
+### 2. pic.png figure still has wrong values
+`pic.png` Panel B still shows the old DMAPO MT-Bench score (7.62), while the paper reports **7.50**. Also contains Chinese "已接受" text, "Train onbinary labels" typo, and is missing SPPO/REINFORCE++ bars.
+**Fix**: Regenerate pic.png with correct values.
 
-### 10. Generator–judge circularity risk
-All training candidates are generated by Mistral-7B and scored by Qwen3-8B judges.
-If Qwen3-8B systematically favors outputs stylistically similar to Mistral-7B, the gating may introduce a style bias rather than a quality signal.
-**Fix**: add a brief analysis of judge score calibration (e.g., inter-rater agreement with human labels on a small sample, or cross-judge correlation).
+---
+
+## 🟠 Major (significantly weakens credibility)
+
+### 3. Cohen's Kappa methodology is incorrect
+Table 5 computes Cohen's κ between pairs of judges (Help.–Fact., Help.–Conc., Fact.–Conc.). But these three judges evaluate **different dimensions** — κ is a measure of agreement between raters evaluating the **same criterion**. What is actually being computed here is cross-dimension score correlation, not inter-rater agreement. Reviewers with statistics background will flag this immediately.
+
+**Fix**: Rename to "cross-dimension Pearson correlation" or redesign: have two independent judges evaluate the same dimension (e.g., two helpfulness judges) and report κ between them.
+
+### 4. Process Critic section severely underdescribed
+Section 3.4 is a single sentence. Missing:
+- What model performs the critic role (same Qwen3-8B? a different model?)
+- What the critic prompt looks like
+- How "flaw severity" is operationalized (continuous score? discrete levels?)
+- How the α=0.15 penalty is applied (to which score? before or after aggregation? per flaw or once?)
+
+Without this, Stage 4 is not reproducible.
+
+**Fix**: Expand Process Critic to a proper subsection with the prompt template and a worked example in the Appendix.
+
+### 5. Math category regression unaddressed
+In Table 2 (MT-Bench per-category): Base = **6.45**, DMAPO = **5.70** (−0.75 regression). This is the largest single-category drop of any method relative to base. The paper only claims "DMAPO achieves the best reasoning score" without mentioning the Math regression. Reviewers will spot it immediately in Table 2.
+
+**Fix**: Add a sentence in the Table 2 discussion: acknowledge the Math regression and offer a hypothesis (e.g., KTO on concise data may suppress step-by-step elaboration that Math questions require).
+
+### 6. No-Variance-Gate ablation has a confound
+"No-Variance-Gate (77.5%) performs worse than Random despite using 2.3× more data (4,297 vs. 1,871)" is presented as validating the variance gate. But the two conditions differ in **both** the filtering strategy and the dataset size — you cannot isolate the effect of variance gating from the effect of dataset size.
+
+**Fix**: Add a row "No-Variance-Gate (1,871 subsampled)" to hold dataset size constant.
+
+### 7. Llama table missing ORPO and REINFORCE++
+Table 9 (Llama-3.1-8B results) has only 4 baselines vs Table 1's 7. ORPO and REINFORCE++ are absent. Reviewers will ask whether these were excluded because they performed better than DMAPO on Llama.
+
+**Fix**: Add ORPO and REINFORCE++ rows, or add a caption note explaining the exclusion.
+
+---
+
+## 🟡 Moderate (needs explanation or is a credibility risk)
+
+### 8. AlpacaEval 98.0% raw win-rate is extraordinarily high
+A fine-tuned 7B model achieving 98.0% raw win-rate vs text-davinci-003 is higher than most GPT-4-class results. This will draw immediate scrutiny — reviewers will suspect length inflation or judge manipulation.
+
+**Fix**: The AlpacaEval LC (95.5%) is only −2.5 pp from raw (262 avg tokens), which is already discussed. Consider adding a sentence explicitly noting that the raw WR is high relative to literature and pointing to the LC result as the more conservative number.
+
+### 9. Internal win-rate uses log-probability comparison (non-standard)
+Win-rate is computed via log-probability comparison against the base model, not by generating actual outputs and using a judge. Log-prob win-rate is biased toward shorter responses and is not directly comparable to standard AlpacaEval-style win-rates.
+
+**Fix**: Note this explicitly in Section 4.4 Evaluation. Ideally add a sentence validating that log-prob WR correlates with judge-based WR on a small sample.
+
+### 10. Training dynamics figure missing ORPO, SPPO, REINFORCE++
+The figure caption (now updated to say "representative subset") still shows only 5 of 8 methods, and the table already covers all of them. Consider either adding the missing curves or removing the figure entirely in favor of Table 6.
 
 ---
 
 ## Summary table
 
-| # | Issue | Severity | Estimated fix effort |
-|---|-------|----------|----------------------|
-| 1 | pic.png mismatch | Critical | Low (update figure) |
-| 2 | AlpacaEval > base | Critical | Medium (verify + explain) |
-| 3 | Internal WR leakage | Critical | Medium (verify holdout construction) |
-| 4 | No Process Critic ablation | Major | High (new experiment) |
-| 5 | Projected ablation results | Major | High (new experiments) |
-| 6 | Undercounted compute | Major | Low (add cost table) |
-| 7 | No significance tests | Moderate | Low (add stats) |
-| 8 | Category score consistency | Moderate | Medium (re-run or report actual values) |
-| 9 | Missing PPO baseline | Moderate | High (new experiment or justified exclusion) |
-| 10 | Generator–judge circularity | Moderate | Low (add calibration analysis) |
+| # | Issue | Severity | Fix effort |
+|---|-------|----------|------------|
+| 1 | Circular eval (Qwen3-8B judge = training judge) | 🔴 Critical | Low (add disclaimer + cross-check) |
+| 2 | pic.png wrong values | 🔴 Critical | Low (regenerate figure) |
+| 3 | Cohen's κ methodology wrong | 🟠 Major | Medium (reframe or redesign) |
+| 4 | Process Critic underdescribed | 🟠 Major | Low (add detail) |
+| 5 | Math category regression unmentioned | 🟠 Major | Low (add one sentence) |
+| 6 | No-Variance-Gate confound | 🟠 Major | High (new experiment row) |
+| 7 | Llama table missing baselines | 🟠 Major | Medium (add rows or note) |
+| 8 | AlpacaEval 98.0% needs more justification | 🟡 Moderate | Low (add sentence) |
+| 9 | Internal WR uses log-prob (non-standard) | 🟡 Moderate | Low (add note) |
+| 10 | Training dynamics figure incomplete | 🟡 Moderate | Low (add note or remove) |
