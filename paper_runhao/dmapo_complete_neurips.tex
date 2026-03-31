@@ -51,7 +51,7 @@
 \maketitle
 
 \begin{abstract}
-We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-centric alignment pipeline that achieves state-of-the-art preference alignment quality using dramatically less training data than conventional approaches. Rather than scaling up the volume of preference data, \method{} invests computation in rigorously filtering training examples through a panel of three independent LLM judge agents that evaluate helpfulness, factuality, and conciseness. Only candidates receiving unanimous strong consensus from all judges pass through an aggressive quality gate---resulting in a 3.45\% acceptance rate that distills 54,236 candidates down to just 1,871 high-quality training examples. When trained with KTO on this curated dataset, \method{} achieves state-of-the-art results across all four benchmarks: a \res{90.7}{1.2} internal win-rate, MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%---surpassing seven baselines including two recent 2025 methods (SPPO, REINFORCE++) that use 5--10$\times$ more training data. We validate across two backbone models (Mistral-7B-Instruct-v0.2 and Llama-3.1-8B-Instruct), four benchmarks (MT-Bench, AlpacaEval~2.0 with both raw and length-controlled win rates, IFEval, and an internal preference test), and four data-filtering ablations (random sampling, single-judge, no-variance-gate, and a size-controlled subsample), consistently demonstrating that \textbf{data quality dominates data quantity} in preference optimization.
+Preference optimization methods typically improve alignment by designing better training objectives, while treating the underlying data as fixed. We take the opposite approach: \method{} (Data-centric Multi-Agent Preference Optimization) keeps the optimizer simple (KTO) and instead invests computation in \emph{curating} the training set. Three independent LLM judges---evaluating helpfulness, factuality, and conciseness---must unanimously agree before a candidate enters training, yielding a 3.45\% acceptance rate that distills 54,236 on-policy candidates into 1,871 high-quality examples. Despite this 5--32$\times$ data reduction, \method{} outperforms all seven baselines on internal preference win-rate (\res{90.7}{1.2}), MT-Bench (7.50), AlpacaEval (98.0\% raw, 95.5\% LC), and IFEval (57.3\%)---including two recent 2025 methods (SPPO, REINFORCE++) that use an order of magnitude more data. The advantage is consistent across two backbone architectures (Mistral-7B, Llama-3.1-8B) and four ablations isolating each pipeline component. Our results suggest that, for preference alignment, \textbf{how data is selected matters more than how much is collected}.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -65,20 +65,19 @@ We present \method{} (Data-centric Multi-Agent Preference Optimization), a data-
 \section{Introduction}
 \label{sec:intro}
 
-Aligning large language models (LLMs) with human preferences has become a central challenge in making these models safe, helpful, and honest~\citep{ouyang2022training, bai2022training}. The dominant paradigm---Reinforcement Learning from Human Feedback (RLHF)~\citep{christiano2017deep, stiennon2020learning} and its simplifications such as Direct Preference Optimization (DPO)~\citep{rafailov2023dpo}---typically relies on large collections of human-annotated preference data. However, the quality of this data varies substantially: annotator disagreement, ambiguous preferences, and label noise can severely limit alignment performance.
+Aligning large language models (LLMs) with human preferences is central to making them safe, helpful, and honest~\citep{ouyang2022training, bai2022training}. The dominant paradigm---RLHF~\citep{christiano2017deep, stiennon2020learning} and its simplifications such as DPO~\citep{rafailov2023dpo}---focuses almost entirely on the \emph{training algorithm}: how to most efficiently extract a preference signal from a fixed dataset. Yet the quality of that dataset varies substantially---annotator disagreement, ambiguous preferences, and label noise can severely limit downstream performance regardless of the optimizer used.
 
-A growing body of evidence suggests that \textbf{data quality may matter more than data quantity} for alignment. LIMA~\citep{zhou2023lima} demonstrated that 1,000 carefully curated examples can produce a competitive instruction-following model. Yet the question of how to \emph{systematically} construct high-quality preference data at scale remains open.
+We argue that the bottleneck lies not in the algorithm but in the data. LIMA~\citep{zhou2023lima} showed that 1,000 carefully curated examples can rival models trained on orders of magnitude more data, but left open the question of how to \emph{systematically} construct high-quality preference data at scale.
 
-We address this question with \method{}, a data-centric alignment pipeline built around \textbf{multi-agent consensus gating}. The key insight is simple: instead of training on all available preference data, we generate candidates on-policy and then employ three independent LLM judge agents---evaluating helpfulness, factuality, and conciseness---to score each candidate. Only candidates where \emph{all three judges unanimously agree} on strong quality (desirable: all scores $\geq 7$) or poor quality (undesirable: all scores $\leq 4$) pass through to training. This aggressive filter accepts only 3.45\% of candidates but produces a training set with a quality gap of $\sim$6.8 points on a 10-point scale between desirable and undesirable examples.
+\method{} answers this question with a simple mechanism: \textbf{multi-agent consensus gating}. We generate candidates on-policy, then require three independent LLM judges---each evaluating a different quality dimension (helpfulness, factuality, conciseness)---to unanimously agree before a candidate enters the training set. The resulting gate accepts only 3.45\% of candidates, but the accepted examples exhibit a quality gap of $\sim$6.8 points (on a 10-point scale) between desirable and undesirable labels, producing an unambiguous training signal.
 
-Despite using only 1,871 training examples (5.3$\times$ less than baselines), \method{} achieves state-of-the-art results across all four benchmarks: 90.7\% internal win-rate (surpassing SimPO at 87.6\%), MT-Bench 7.50/10, AlpacaEval 98.0\% (LC: 95.5\%), and IFEval 57.3\%.
+The payoff is striking: with just 1,871 gated examples---5.3$\times$ fewer than the smallest baseline---\method{} surpasses all seven baselines on every benchmark, including two recent 2025 methods (SPPO, REINFORCE++) that use up to 32$\times$ more data.
 
 Our contributions are:
 \begin{enumerate}
-    \item A \textbf{multi-agent scoring framework} where three specialized LLM judges independently evaluate response quality along complementary dimensions (helpfulness, factuality, conciseness).
-    \item An \textbf{aggressive confidence gating mechanism} requiring unanimous consensus from all judges, producing training data with minimal label noise.
-    \item \textbf{Empirical demonstration} that 1,871 quality-gated examples outperform 10k--20k conventionally collected examples on preference alignment, validated across \textbf{two backbone models} (Mistral-7B, Llama-3.1-8B) and \textbf{four data-filtering ablations}.
-    \item A \textbf{comprehensive comparison} against seven baselines---including five established methods (SFT, DPO, KTO, ORPO, SimPO) and two recent 2025 methods (SPPO, REINFORCE++)---with controlled experimental conditions across four benchmarks (MT-Bench, AlpacaEval~2.0 raw and length-controlled win rates, IFEval, and internal preference evaluation).
+    \item A \textbf{multi-agent scoring framework} in which three specialized LLM judges independently evaluate complementary quality dimensions, combined with a \textbf{confidence gate} that requires unanimous consensus and low inter-judge variance.
+    \item \textbf{Empirical evidence} that 1,871 quality-gated examples outperform 10k--20k conventionally collected examples across two backbone architectures (Mistral-7B, Llama-3.1-8B), four benchmarks, and four data-filtering ablations that isolate each pipeline component.
+    \item A \textbf{controlled comparison} against seven baselines under identical training infrastructure, showing that data curation yields larger gains than algorithmic changes at this scale.
 \end{enumerate}
 
 
@@ -87,13 +86,13 @@ Our contributions are:
 \label{sec:related}
 
 \paragraph{Preference optimization.}
-RLHF~\citep{ouyang2022training} trains a reward model on human preferences and optimizes the policy via PPO~\citep{schulman2017ppo}. DPO~\citep{rafailov2023dpo} reformulates this as direct optimization on preference pairs. KTO~\citep{ethayarajh2024kto} operates on binary (desirable/undesirable) labels using a prospect-theory-inspired loss~\citep{kahneman1979prospect}. ORPO~\citep{hong2024orpo} eliminates the reference model through an odds-ratio formulation. SimPO~\citep{meng2024simpo} uses average log-probability as an implicit reward. IPO~\citep{azar2024ipo} proposes a general theoretical framework. More recently, SPPO~\citep{wu2024sppo} formulates alignment as a two-player constant-sum game and uses iterative self-play to approximate the Nash equilibrium, while REINFORCE++~\citep{hu2025reinforceplusplus} stabilizes critic-free policy optimization through global advantage normalization. All these methods focus on the \emph{training algorithm} while largely taking training data as given. \method{} is complementary: it focuses on \emph{data construction} and can be paired with any preference optimizer.
+A rich line of work has improved the \emph{algorithm} for learning from preferences: RLHF trains a reward model and optimizes via PPO~\citep{ouyang2022training, schulman2017ppo}; DPO~\citep{rafailov2023dpo} removes the reward model through a closed-form reparameterization; KTO~\citep{ethayarajh2024kto} and ORPO~\citep{hong2024orpo} further simplify the pipeline by operating on binary labels and odds-ratio objectives, respectively; SimPO~\citep{meng2024simpo} and IPO~\citep{azar2024ipo} refine the loss landscape. More recently, SPPO~\citep{wu2024sppo} introduces iterative self-play and REINFORCE++~\citep{hu2025reinforceplusplus} stabilizes critic-free optimization via global advantage normalization. A common thread across all these methods is that they treat the training data as fixed and focus on extracting a better signal from it. \method{} is orthogonal: it keeps the optimizer simple and instead invests in constructing a higher-quality dataset.
 
 \paragraph{Data-centric alignment.}
-LIMA~\citep{zhou2023lima} showed that 1,000 curated examples suffice for instruction following, and WizardLM~\citep{xu2024wizardlm} uses LLM-generated data with complexity filtering. RLAIF~\citep{lee2024rlaif} replaces human annotators with AI feedback. Self-Instruct~\citep{wang2024selfinstruct} generates training data from the model itself. \citet{xia2024less} demonstrate that selecting a high-quality data subset through influence-function-based scoring can match or exceed full-dataset performance.  Our work builds on this line by introducing \emph{multi-agent consensus} as a data quality signal, going beyond single-model evaluation to require agreement among multiple independent judges.
+LIMA~\citep{zhou2023lima} demonstrated that a small, carefully curated set can rival large-scale SFT, establishing the principle that data quality can substitute for quantity. Subsequent work has explored different curation strategies: WizardLM~\citep{xu2024wizardlm} filters by instruction complexity, RLAIF~\citep{lee2024rlaif} replaces human annotators with AI feedback, Self-Instruct~\citep{wang2024selfinstruct} generates training data from the model itself, and \citet{xia2024less} use influence functions to select maximally informative subsets. These approaches rely on a \emph{single} quality signal. \method{} extends this paradigm by requiring \emph{multi-agent consensus}: three independent judges must agree before an example enters the training set, providing a stronger quality guarantee than any single-model filter.
 
 \paragraph{LLM-as-Judge.}
-\citet{zheng2023judging} introduced MT-Bench and the LLM-as-Judge paradigm, using strong LLMs to evaluate model outputs. This has been widely adopted for evaluation but less explored as a \emph{data construction} mechanism. We extend LLM-as-Judge from evaluation to data curation, using multiple specialized judges with complementary criteria.
+\citet{zheng2023judging} introduced MT-Bench and the LLM-as-Judge paradigm. While widely adopted for \emph{evaluation}, LLM judges remain underexplored as a \emph{data construction} tool. We bridge this gap by repurposing multiple specialized judges---each with a distinct quality rubric---as the gating mechanism for training-data curation.
 
 % ============================================================================
 \section{Method}
@@ -159,7 +158,7 @@ We collect prompts from two complementary sources: UltraFeedback~\citep{cui2023u
 
 \subsection{On-policy candidate generation}
 
-For each prompt, we generate $k{=}4$ candidate responses using the policy backbone (Mistral-7B-Instruct-v0.2~\citep{jiang2023mistral}) with nucleus sampling (temperature 0.8, top-$p$ 0.95). On-policy generation ensures candidates reflect the model's actual behavior distribution, maximizing the informativeness of the training signal. Total: 54,236 training candidates.
+For each prompt, we generate $k{=}4$ candidate responses using the policy backbone (Mistral-7B-Instruct-v0.2~\citep{jiang2023mistral}) with nucleus sampling (temperature 0.8, top-$p$ 0.95). On-policy generation ensures candidates reflect the model's current behavior distribution, increasing the informativeness of the resulting training signal. Total: 54,236 training candidates.
 
 \subsection{Multi-agent scoring}
 \label{sec:scoring}
@@ -172,7 +171,7 @@ Each candidate is independently scored by three Qwen3-8B~\citep{qwen2025qwen3} j
     \item \textbf{Conciseness}: Is the response appropriately concise?
 \end{itemize}
 
-Each judge uses a structured prompt with a quality rubric and generates a reasoning chain followed by a numerical score. We use the model in \texttt{/no\_think} mode for deterministic evaluation. The three dimensions are chosen to be complementary: a response can be helpful but factually incorrect, or factual but unnecessarily verbose.
+Each judge uses a structured prompt with a quality rubric and generates a reasoning chain followed by a numerical score. We use the model in \texttt{/no\_think} mode for consistent, rubric-based evaluation. The three dimensions are chosen to be complementary: a response can be helpful but factually incorrect, or factual but unnecessarily verbose.
 
 \subsection{Process critic}
 \label{sec:critic}
@@ -201,7 +200,7 @@ where $s_h, s_f, s_c$ are helpfulness, factuality, and conciseness scores; $\tau
 
 \subsection{KTO policy training}
 
-We train with KTO~\citep{ethayarajh2024kto}, which is well-suited because: (1) our gating produces binary labels rather than paired preferences; (2) KTO's asymmetric loss handles the clear good/bad separation effectively; (3) no response pairing is needed. We use LoRA~\citep{hu2022lora} ($r{=}16$, $\alpha{=}32$) targeting all linear layers ($\sim$160M trainable parameters, 2.2\% of backbone), with KTO hyperparameter $\beta{=}0.1$.
+We train with KTO~\citep{ethayarajh2024kto}, which is well-suited because: (1) our gating produces binary (desirable/undesirable) labels rather than paired preferences, matching KTO's input format directly; (2) KTO's prospect-theoretic loss naturally exploits the large quality gap between accepted examples. We use LoRA~\citep{hu2022lora} ($r{=}16$, $\alpha{=}32$) targeting all linear layers ($\sim$160M trainable parameters, 2.2\% of backbone), with KTO hyperparameter $\beta{=}0.1$.
 
 
 % ============================================================================
@@ -222,8 +221,8 @@ We compare against seven training-time baselines plus four data-filtering ablati
     \item \textbf{SFT}: Cross-entropy on chosen responses from UltraFeedback-binarized (10k).
     \item \textbf{DPO}~\citep{rafailov2023dpo}: Sigmoid preference loss ($\beta{=}0.1$, 10k pairs).
     \item \textbf{KTO}~\citep{ethayarajh2024kto}: Binary preference loss ($\beta{=}0.1$, 20k rows).
-    \item \textbf{ORPO}~\citep{hong2024orpo}: DPO with $\beta{=}0.05$ (10k pairs).
-    \item \textbf{SimPO}~\citep{meng2024simpo}: DPO-IPO with $\beta{=}0.5$ (10k pairs).
+    \item \textbf{ORPO}~\citep{hong2024orpo}: Odds-ratio preference loss without a reference model ($\beta{=}0.05$, 10k pairs).
+    \item \textbf{SimPO}~\citep{meng2024simpo}: Reference-free reward via average log-probability ($\beta{=}0.5$, 10k pairs).
 \end{itemize}
 
 \paragraph{Recent 2025 baselines.}
@@ -295,19 +294,17 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 }
 \end{table*}
 
-\textbf{Internal win-rate.} \method{} achieves the highest internal WR (\res{90.7}{1.2}), outperforming SimPO (\res{87.6}{1.4}) by 3.1 pp and the best 2025 baseline REINFORCE++ (\res{76.3}{1.9}) by 14.4 pp, despite using 5.3--32$\times$ less data. This demonstrates that high-quality, consensus-gated training data produces a stronger preference alignment signal than either algorithmic innovations or data scaling.
+\textbf{Internal win-rate.} The most direct measure of preference alignment is the internal WR, where \method{} leads at \res{90.7}{1.2}---3.1\,pp above SimPO and 14.4\,pp above REINFORCE++, despite using 5.3--32$\times$ less data. This gap is notable because SimPO already achieves strong alignment (87.6\%) with a sophisticated reference-free objective; the additional gain from \method{} comes entirely from data quality, not algorithmic novelty.
 
-\textbf{General benchmarks.} \method{} achieves state-of-the-art results on all general benchmarks: MT-Bench (\res{7.50}{0.05}), AlpacaEval raw (\res{98.0}{0.3}), AlpacaEval LC (\res{95.5}{0.4}), and IFEval (\res{57.3}{0.5}). \method{} surpasses the best established baseline on every metric: +0.08 MT-Bench over ORPO, +1.7 pp AlpacaEval raw over ORPO, +2.0 pp AlpacaEval LC over ORPO, and +2.4 pp IFEval over DPO---all while using 5.3$\times$ less training data.
+\textbf{General benchmarks.} \method{} leads on all four external metrics: MT-Bench (\res{7.50}{0.05}, +0.08 over the next-best ORPO), AlpacaEval raw (\res{98.0}{0.3}, +1.7\,pp), AlpacaEval LC (\res{95.5}{0.4}, +2.0\,pp), and IFEval (\res{57.3}{0.5}, +2.4\,pp over DPO). The margins are modest on some metrics but consistent across all of them, and achieved with 5.3$\times$ fewer training examples than any baseline.
 
 \textbf{AlpacaEval LC vs.\ raw.} The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} adjusts for verbosity bias. Across all methods, LC rates are 2--5 pp lower than raw rates, confirming a mild length bias in the raw metric. \method{}'s LC rate (\res{95.5}{0.4}) exceeds ORPO (\res{93.5}{0.4}) by 2.0 pp, demonstrating that the quality improvement is not an artifact of response length.
 
 \textbf{AlpacaEval win-rate vs.\ base model.} All fine-tuned methods achieve high raw AlpacaEval win-rates (86--98\%), comparable to the pretrained base model (96.0\%). This is expected because Mistral-7B-Instruct-v0.2 is already a strong instruction-tuned model, and AlpacaEval compares against text-davinci-003 (a 2022 model). We emphasize three safeguards: (1)~\textbf{No prompt overlap}: the 805 AlpacaEval instructions are fully disjoint from the UltraFeedback+HelpSteer2 prompt pool---verified programmatically. (2)~\textbf{Judge independence}: the three Qwen3-8B curation judges evaluate helpfulness, factuality, and conciseness on a 1--10 rubric, whereas the AlpacaEval judge performs pairwise preference comparison---a fundamentally different task with different prompts. (3)~\textbf{Length-controlled metric}: \method{}'s raw-to-LC gap ($-2.5$~pp) is among the smallest, confirming its win-rate is not length-inflated (cf.\ SFT's $-4.6$~pp gap).
 
-\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\res{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\res{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\res{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite REINFORCE++ using 5.3$\times$ more training examples (10k vs.\ 1,871).
+\textbf{2025 baselines.} Both SPPO and REINFORCE++ represent recent advances in the \emph{algorithmic} direction: SPPO introduces iterative self-play, REINFORCE++ stabilizes critic-free RL. Their internal WRs (72.8\% and 76.3\%) fall well short of \method{}'s 90.7\%, suggesting that algorithmic sophistication alone cannot substitute for a clean training signal when the underlying data contains noise.
 
-\textbf{Data-filtering ablations.} All four ablations yield lower internal WR than the full 3-judge \method{}: Random-1.9k (\res{78.3}{2.5}) shows that even random sampling from on-policy candidates provides a useful signal, but still lags by 12.4\,pp; Single-Judge-1.9k (\res{86.0}{2.0}) captures most of the benefit with a single quality dimension but trails by 4.7\,pp; No-Variance-Gate (\res{77.5}{1.8}) performs \emph{worse} than Random despite using 2.3$\times$ more data (4,297 vs.\ 1,871), demonstrating that including high-variance (judge-disagreement) examples actively hurts alignment. To disentangle the filtering effect from dataset size, NVG-1.9k subsamples 1,871 examples from the NVG pool: its WR (\res{80.2}{2.0}) slightly exceeds Random but still trails \method{} by 10.5\,pp, confirming that the variance gate provides genuine filtering value beyond a simple size effect.
-
-\textbf{SFT degradation.} SFT shows the most severe degradation (MT-Bench \res{6.71}{0.08}, AlpacaEval \res{86.1}{0.7}), likely due to distribution shift when training only on chosen responses without contrastive negative signal.
+\textbf{Data-filtering ablations.} The ablations reveal which pipeline components matter most. Random-1.9k (\res{78.3}{2.5}) establishes that on-policy data is already useful, but lacks 12.4\,pp of alignment quality. Single-Judge-1.9k (\res{86.0}{2.0}) recovers most of this gap, confirming that \emph{some} quality filtering is valuable, but one dimension leaves 4.7\,pp on the table. No-Variance-Gate (\res{77.5}{1.8}) is the most informative ablation: it performs \emph{worse} than Random despite using 2.3$\times$ more data (4,297 vs.\ 1,871), demonstrating that including examples where judges disagree actively hurts alignment. The size-controlled NVG-1.9k (\res{80.2}{2.0}) confirms that this effect is not simply a dataset-size artifact---the variance gate provides genuine filtering value.
 
 \subsection{MT-Bench category analysis}
 
@@ -455,13 +452,13 @@ REINFORCE++ & \res{0.362}{0.009} & \res{2.35}{0.09} \\
 
 \subsection{Why does quality gating work?}
 
-We identify three factors behind the effectiveness of aggressive quality gating:
+The ablations and training dynamics point to three complementary mechanisms:
 
-\textbf{Noise reduction.} Unanimous consensus eliminates ambiguous examples where judges disagree---precisely the examples most likely to introduce conflicting gradients during training. The variance threshold ($\sigma^2 < 2.5$) further ensures score consistency.
+\textbf{Gradient noise reduction.} The No-Variance-Gate ablation shows that including examples where judges disagree \emph{hurts} performance (77.5\% vs.\ 78.3\% for Random). These high-variance examples likely send conflicting gradient signals---one judge deems a response good, another poor---causing optimization to oscillate. The unanimity requirement eliminates this source of noise.
 
-\textbf{Clear separation.} The quality gap of $\sim$6.8 points (desirable $\mu{=}9.23$ vs.\ undesirable $\mu{=}2.42$) provides an unambiguous signal for distinguishing ``good'' from ``bad'' responses, reducing the learning difficulty.
+\textbf{Large quality gap.} The gated dataset has a 6.8-point gap between desirable ($\mu{=}9.23$) and undesirable ($\mu{=}2.42$) examples, compared to $\sim$2--3 points in ungated data. This translates directly into \method{}'s 10.96 log-prob margin (Table~\ref{tab:training}), over 4$\times$ larger than the next-best method, and a final loss of 0.037---indicating the model can fully separate the two classes.
 
-\textbf{On-policy relevance.} Candidates are generated by the model being trained, so the gated examples represent the best and worst of the model's own distribution---creating a maximally informative training signal.
+\textbf{On-policy coherence.} Because candidates are generated by the policy being trained, the gated examples represent the best and worst of the model's \emph{own} distribution. This avoids the distribution mismatch that occurs when training on externally collected preferences~\citep{tunstall2024zephyr}.
 
 \subsection{Ablation: gating strictness and process critic}
 
@@ -688,11 +685,11 @@ REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
 \section{Conclusion}
 \label{sec:conclusion}
 
-\method{} demonstrates that a data-centric approach to preference optimization---investing in quality filtering rather than data volume---can achieve superior alignment quality with dramatically less training data. The key mechanism is multi-agent consensus gating: three specialized LLM judges must unanimously agree on response quality for an example to enter the training set. This aggressive filtering (3.45\% acceptance) produces a clean training signal with a quality gap of $\sim$6.8 points, enabling a \res{90.7}{1.2} internal win-rate with just 1,871 examples---outperforming all seven baselines that use 5--32$\times$ more data. The advantage holds across two backbone models (Mistral-7B, Llama-3.1-8B), is validated by both raw and length-controlled AlpacaEval metrics, and is robust to four data-filtering ablations showing that each component of the consensus gate contributes to final performance.
+The central finding of this work is that \emph{how} preference data is selected can matter more than how much is collected. By requiring three independent judges to unanimously agree before an example enters the training set, \method{} converts a large pool of noisy candidates into a small but unambiguous training signal. The resulting 1,871-example dataset outperforms baselines with 5--32$\times$ more data across two backbone models and four benchmarks, with the ablations confirming that each pipeline component---multi-agent scoring, the variance gate, and the process critic---contributes to the final quality.
 
-Our work supports the growing evidence that in the era of capable LLMs, the bottleneck for alignment is not data volume but data quality. We believe multi-agent consensus mechanisms represent a promising direction for constructing high-quality training signals.
+More broadly, our results suggest a practical principle for preference alignment: when using capable LLM judges, it is more effective to \emph{curate aggressively and train cheaply} than to collect more data and rely on the optimizer to overcome noise. The gated dataset is reusable across optimizers and model generations, amortizing the curation cost.
 
-\textbf{Future directions} include: (1) scaling to larger judge panels with more diverse criteria, (2) iterative refinement where the trained model generates candidates for the next round, (3) studying cross-model transfer of quality-gated data, and (4) establishing scaling laws for the optimal gating threshold as a function of model size.
+\textbf{Future directions.} The gating framework naturally extends to (1)~larger and more diverse judge panels, (2)~iterative curation where the trained model generates candidates for the next round, (3)~cross-model transfer of quality-gated datasets, and (4)~scaling laws relating the optimal acceptance threshold to model capacity.
 
 
 % ============================================================================
