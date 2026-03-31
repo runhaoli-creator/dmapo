@@ -102,7 +102,7 @@ LIMA~\citep{zhou2023lima} demonstrated that a small, carefully curated set can r
 
 \begin{figure}[t]
 \centering
-\resizebox{\textwidth}{!}{%
+\resizebox{0.6\textwidth}{!}{%
 \begin{tikzpicture}[
   node distance=0.45cm and 0.6cm,
   stage/.style={draw, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, font=\small\bfseries, text=white, align=center},
@@ -248,7 +248,7 @@ All methods use LoRA ($r{=}16$, $\alpha{=}32$, dropout 0.05, targeting q/k/v/o/g
 \textbf{MT-Bench}~\citep{zheng2023judging}: 80 multi-turn questions, 8 categories, scored 1--10 by Qwen3-8B.
 \textbf{AlpacaEval~2.0}~\citep{li2023alpacaeval}: 805 instructions, pairwise vs.\ text-davinci-003; we report both the \textbf{raw win rate} (WR) and the \textbf{length-controlled win rate} (LC)~\citep{dubois2024lengthcontrolled}, which regresses out verbosity bias.
 \textbf{IFEval}~\citep{zhou2023ifeval}: 541 prompts with verifiable constraints (rule-based).
-\textbf{Internal}: 129 gated validation prompts, win-rate via log-probability comparison vs.\ base model, plus perplexity on desirable responses. \emph{Data isolation}: the 14,272 source prompts are split 95/5 \emph{before} candidate generation, yielding 13,559 train-split and 713 validation-split prompts. Candidates are generated and scored independently for each split, and the confidence gate is applied separately, producing 1,871 train and 129 validation gated examples. We verified that the train and validation gated sets share \textbf{zero} exact prompt overlap. Consequently, the internal WR measures generalization to held-out prompts from the same source distribution, not in-distribution performance on training examples.
+\textbf{Internal}: 129 gated validation prompts (from a held-out 5\% prompt split with zero overlap with training prompts; see Appendix~\ref{app:pipeline}), win-rate via log-probability comparison vs.\ base model.
 
 
 % ============================================================================
@@ -337,113 +337,7 @@ Base & 5.60 & \textbf{7.90} & 8.70 & \textbf{6.45} & 7.15 & 7.40 & 8.20 & 7.90 &
 
 \textbf{Math category regression.} \method{} exhibits a $-0.75$ drop in Math (5.70 vs.\ base 6.45). We hypothesize two contributing factors: (1)~the conciseness judge in the curation pipeline may penalize the verbose, step-by-step derivations that MT-Bench math questions reward, creating a stylistic mismatch between training signal and evaluation criterion; and (2)~mathematical prompts constitute a small fraction of the source data (UltraFeedback, HelpSteer2), so the aggressively gated set likely underrepresents mathematical reasoning examples. Notably, the regression is not unique to \method{}---DPO ($-1.75$) and SimPO ($-0.95$) regress equally or more, suggesting a broader tension between preference optimization and mathematical performance.
 
-\subsection{Internal evaluation and perplexity}
-
-Table~\ref{tab:internal} shows internal win-rate and perplexity on the gated validation set.
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Internal evaluation} on 129 gated validation prompts. Win-rate via log-prob comparison vs.\ base. Perplexity on 63 desirable responses. Mean$\pm$std over 4 seeds.}
-\label{tab:internal}
-\vspace{0.5em}
-\begin{tabular}{l cc c}
-\toprule
-\textbf{Method} & \textbf{WR (\%)} $\uparrow$ & \textbf{PPL} $\downarrow$ & \textbf{$\Delta$PPL} \\
-\midrule
-Base  & --- & 6.43 & --- \\
-+ SFT & \res{32.6}{1.8} & \res{\textbf{4.89}}{0.08} & $-$1.54 \\
-+ DPO & \res{43.4}{2.1} & \res{7.10}{0.12} & +0.67 \\
-+ KTO & \res{36.4}{1.5} & \res{7.50}{0.14} & +1.07 \\
-+ ORPO & \res{55.8}{2.3} & \res{7.79}{0.11} & +1.36 \\
-+ SimPO & \res{\underline{87.6}}{1.4} & \res{9.14}{0.18} & +2.71 \\
-+ SPPO & \res{72.8}{2.0} & \res{7.62}{0.13} & +1.19 \\
-+ REINFORCE++ & \res{76.3}{1.9} & \res{7.45}{0.10} & +1.02 \\
-\midrule
-\textbf{+ DMAPO} & \res{\textbf{90.7}}{1.2} & \res{7.11}{0.09} & +0.68 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{PPL-WR tradeoff.} \method{} achieves the highest WR (\res{90.7}{1.2}) with only a modest PPL increase (+0.68), while SimPO---the nearest WR competitor at \res{87.6}{1.4}---incurs a much larger PPL penalty (+2.71). REINFORCE++ achieves strong WR (\res{76.3}{1.9}) with a moderate PPL increase (+1.02), but still trails \method{} by 14.4\,pp. This suggests \method{}'s quality-gated signal shifts probabilities toward preferred outputs without destabilizing the overall language model distribution.
-
-
-\subsection{Pipeline statistics}
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Pipeline statistics.} 14,272 prompts $\rightarrow$ 54,236 candidates $\rightarrow$ 1,871 gated examples (3.45\% acceptance). Train/val split at the prompt level ensures no data leakage.}
-\label{tab:pipeline_stats}
-\vspace{0.5em}
-\begin{tabular}{l r}
-\toprule
-\textbf{Statistic} & \textbf{Value} \\
-\midrule
-Unique source prompts & 14,272 \\
-\quad Train-split prompts & 13,559 (95\%) \\
-\quad Val-split prompts & 713 (5\%) \\
-Total candidates (train) & 54,236 \\
-Total candidates (val) & 2,852 \\
-Acceptance rate & 3.45\% \\
-Gated examples (train) & 1,871 \\
-Gated examples (val) & 129 \\
-\quad Desirable / Undesirable (train) & 951 / 920 \\
-\quad Desirable / Undesirable (val) & 63 / 66 \\
-Prompt overlap (train $\cap$ val) & \textbf{0} \\
-Desirable mean score & $9.23 \pm 1.09$ \\
-Undesirable mean score & $2.42 \pm 1.10$ \\
-Quality gap & $\sim$6.8 points \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-
-\subsection{Cross-dimension gate agreement}
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Cross-dimension gate agreement} on 54,236 candidates. Each judge's score is binarized into \emph{pass} ($\geq\tau_+{=}7$) vs.\ \emph{fail} ($<\tau_+$); Cohen's $\kappa$ is then computed on these binary gate labels. Because the three judges evaluate \emph{different} quality dimensions, $\kappa$ here measures cross-dimension consistency on gate decisions rather than classical inter-rater reliability on a shared task. Mean $\kappa = 0.613$ (``substantial'').}
-\label{tab:agreement}
-\vspace{0.5em}
-\begin{tabular}{l ccc}
-\toprule
-\textbf{Dimension Pair} & \textbf{$\kappa$} & \textbf{$r$} & \textbf{Agree (\%)} \\
-\midrule
-Help.--Fact. & 0.640 & 0.579 & 94.0 \\
-Help.--Conc. & 0.642 & 0.544 & 92.4 \\
-Fact.--Conc. & 0.556 & 0.461 & 91.2 \\
-\midrule
-\textbf{Mean} & \textbf{0.613} & \textbf{0.528} & \textbf{92.5} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Interpretation.} Because the three judges evaluate \emph{different} quality dimensions, these $\kappa$ values measure \emph{cross-dimension consistency}---whether a candidate that passes one dimension's threshold also tends to pass the others---rather than classical inter-rater agreement on a shared task. A $\kappa$ of 0.613 therefore indicates that the dimensions are positively correlated but not redundant: high enough to support the unanimity requirement of the confidence gate, yet low enough (especially Fact.--Conc.\ at 0.556) to confirm that each dimension contributes independent filtering power.
-
-\subsection{Training dynamics}
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Training outcomes.} \method{}'s extremely low loss (\res{0.037}{0.004}) indicates the model easily separates desirable from undesirable in the gated dataset. \emph{Margin}: average log-prob difference between desirable and undesirable responses. Mean$\pm$std over 4 seeds.}
-\label{tab:training}
-\vspace{0.5em}
-\begin{tabular}{l c c}
-\toprule
-\textbf{Method} & \textbf{Final Loss} & \textbf{Margin} \\
-\midrule
-SFT & \res{1.150}{0.012} & --- \\
-DPO & \res{0.473}{0.009} & \res{1.88}{0.06} \\
-KTO & \res{0.441}{0.011} & \res{1.81}{0.07} \\
-ORPO & \res{0.413}{0.008} & \res{1.54}{0.05} \\
-SimPO & \res{1.046}{0.015} & \res{40.76}{0.82} \\
-SPPO & \res{0.385}{0.010} & \res{2.14}{0.08} \\
-REINFORCE++ & \res{0.362}{0.009} & \res{2.35}{0.09} \\
-\midrule
-\textbf{DMAPO} & \res{\textbf{0.037}}{0.004} & \res{\textbf{10.96}}{0.31} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\method{}'s final loss of 0.037 is remarkably low compared to all baselines, indicating the quality-gated training data provides a clean, unambiguous signal with clear separation between desirable and undesirable examples.
+\textbf{PPL-WR tradeoff.} \method{} achieves the highest internal WR (\res{90.7}{1.2}) with only a modest perplexity increase (+0.68 over base), while SimPO---the nearest WR competitor at 87.6\%---incurs a much larger PPL penalty (+2.71). Full internal evaluation and pipeline statistics are in Appendix~\ref{app:internal} and~\ref{app:pipeline}.
 
 
 % ============================================================================
@@ -482,107 +376,7 @@ No gating & 54,236 & \res{7.05}{0.09} & \res{72.1}{2.4} \\
 \end{tabular}
 \end{table}
 
-\subsection{Ablation: acceptance threshold}
-
-Table~\ref{tab:ablation_efficiency} varies the acceptance threshold. Performance improves as the threshold becomes stricter (lower acceptance rate), peaking at our default setting (3.45\%). Below $\sim$1\%, performance degrades slightly---likely due to the training set becoming too small for effective learning.
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Ablation: acceptance threshold.} Mean$\pm$std over 4 seeds. }
-\label{tab:ablation_efficiency}
-\vspace{0.5em}
-\begin{tabular}{l r c c}
-\toprule
-\textbf{Accept.\ Rate} & $|\mathcal{D}|$ & \textbf{MT-B} & \textbf{Int.\ WR\%} \\
-\midrule
-100\% & 54,236 & \res{7.05}{0.09} & \res{72.1}{2.4} \\
-$\sim$20\% & 10,847 & \res{7.15}{0.07} & \res{76.8}{2.0} \\
-$\sim$10\% & 5,424 & \res{7.20}{0.06} & \res{81.2}{1.8} \\
-$\sim$5\% & 2,712 & \res{7.25}{0.05} & \res{86.9}{1.5} \\
-\textbf{3.45\% (ours)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
-$\sim$1\% & 542 & \res{7.18}{0.08} & \res{85.4}{1.9} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-% ============================================================================
-\subsection{Score distribution analysis}
-
-Figure~\ref{fig:score_dist} visualizes the distribution of aggregate scores across all 54,236 training candidates, broken down by gating decision. The majority of candidates receive moderate scores (5--7) and are discarded. The confidence gate selects only the tails: 951 desirable examples ($\mu{=}9.23$) and 920 undesirable examples ($\mu{=}2.42$), creating a quality gap of $\sim$6.8 points.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.95\columnwidth, height=5.0cm,
-    ybar, bar width=6pt,
-    xlabel={Aggregate Score (1--10)},
-    ylabel={Candidate Count},
-    ymin=0, ymax=18000,
-    xtick={1,2,3,4,5,6,7,8,9,10},
-    xmin=0.5, xmax=10.5,
-    legend style={at={(0.98,0.95)}, anchor=north east, font=\scriptsize, cells={anchor=west}},
-    area legend,
-    grid=major,
-    grid style={gray!20},
-    tick label style={font=\scriptsize},
-    label style={font=\small},
-]
-% Discarded (gray)
-\addplot[fill=disccolor!40, draw=disccolor!70] coordinates {
-    (1, 420) (2, 1580) (3, 3250) (4, 5840) (5, 15870) (6, 16420) (7, 6180) (8, 2350) (9, 455) (10, 0)
-};
-% Desirable (green)
-\addplot[fill=descolor!50, draw=descolor!80] coordinates {
-    (1, 0) (2, 0) (3, 0) (4, 0) (5, 0) (6, 0) (7, 0) (8, 145) (9, 518) (10, 288)
-};
-% Undesirable (red)
-\addplot[fill=undcolor!50, draw=undcolor!80] coordinates {
-    (1, 310) (2, 425) (3, 185) (4, 0) (5, 0) (6, 0) (7, 0) (8, 0) (9, 0) (10, 0)
-};
-\legend{Discarded ($n{=}52{,}365$), Desirable ($n{=}951$), Undesirable ($n{=}920$)}
-\end{axis}
-\end{tikzpicture}
-\caption{\textbf{Score distribution.} Aggregate scores across 54,236 candidates. The confidence gate retains only the tails (green = desirable, red = undesirable), discarding the ambiguous middle. Quality gap: $\sim$6.8 points.}
-\label{fig:score_dist}
-\end{figure}
-
-\subsection{Training dynamics}
-
-Figure~\ref{fig:train_dynamics} shows training loss curves for all methods. \method{}'s loss converges to a remarkably low value ($\sim$0.037) within the first 30\% of training, reflecting the clean separation in the gated dataset. In contrast, baselines plateau at substantially higher loss values, indicating noisier training signals.
-
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-    width=0.95\columnwidth, height=5.2cm,
-    xlabel={Training Step (\%)},
-    ylabel={Loss},
-    xmin=0, xmax=100,
-    ymin=0, ymax=1.4,
-    legend style={at={(0.98,0.98)}, anchor=north east, font=\tiny, cells={anchor=west}, legend columns=2},
-    grid=major,
-    grid style={gray!20},
-    tick label style={font=\scriptsize},
-    label style={font=\small},
-    smooth, thick,
-]
-% SFT
-\addplot[color=pipegray, dashed] coordinates {(0,2.85) (10,1.62) (20,1.38) (30,1.25) (40,1.20) (50,1.18) (60,1.16) (70,1.155) (80,1.152) (90,1.150) (100,1.150)};
-% DPO
-\addplot[color=pipeblue] coordinates {(0,0.693) (10,0.612) (20,0.558) (30,0.521) (40,0.502) (50,0.491) (60,0.483) (70,0.478) (80,0.475) (90,0.474) (100,0.473)};
-% KTO
-\addplot[color=pipeorange] coordinates {(0,0.693) (10,0.595) (20,0.535) (30,0.498) (40,0.475) (50,0.461) (60,0.452) (70,0.446) (80,0.443) (90,0.442) (100,0.441)};
-% SimPO
-\addplot[color=pipered] coordinates {(0,1.50) (10,1.32) (20,1.22) (30,1.15) (40,1.10) (50,1.08) (60,1.06) (70,1.05) (80,1.048) (90,1.047) (100,1.046)};
-% DMAPO
-\addplot[color=pipegreen, line width=1.8pt] coordinates {(0,0.693) (10,0.285) (20,0.142) (30,0.078) (40,0.055) (50,0.045) (60,0.041) (70,0.039) (80,0.038) (90,0.037) (100,0.037)};
-\legend{SFT, DPO, KTO, SimPO, \textbf{DMAPO}}
-\end{axis}
-\end{tikzpicture}
-\caption{\textbf{Training loss curves} (representative subset; see Table~\ref{tab:training} for all methods). \method{}'s loss drops rapidly to $\sim$0.037, reflecting the clean, unambiguous signal in the quality-gated dataset. Shown baselines plateau at 5--30$\times$ higher loss due to noisier training data.}
-\label{fig:train_dynamics}
-\end{figure}
+We also vary the acceptance threshold (Appendix~\ref{app:threshold}): performance peaks at our default 3.45\% and degrades below $\sim$1\%, suggesting a minimum dataset size for effective learning. Score distributions, training loss curves, and cross-dimension agreement statistics are in Appendices~\ref{app:dynamics},~\ref{app:agreement}, and~\ref{app:scores}.
 
 
 \subsection{Second backbone: Llama-3.1-8B-Instruct}
@@ -614,72 +408,11 @@ Base & --- & 7.85 & 97.2 & 58.5 & --- \\
 \end{table}
 
 
-\subsection{Qualitative examples: gated vs.\ discarded}
-
-Table~\ref{tab:qualitative} presents representative examples of candidates that were gated (accepted) or discarded by the confidence gate, illustrating the multi-agent consensus mechanism in action.
-
-\begin{table*}[t]
-\centering
-\caption{\textbf{Qualitative examples of gated vs.\ discarded candidates.} Scores from three judges: H = Helpfulness, F = Factuality, C = Conciseness. $\bar{s}$ = mean, Var = inter-judge variance.}
-\label{tab:qualitative}
-\vspace{0.5em}
-\small
-\begin{tabular}{p{2.8cm} p{7.2cm} ccc cc l}
-\toprule
-\textbf{Prompt} & \textbf{Response (truncated)} & \textbf{H} & \textbf{F} & \textbf{C} & $\bar{s}$ & \textbf{Var} & \textbf{Gate} \\
-\midrule
-\raggedright ``Explain opportunity cost in economics with a real-world example.'' &
-``Opportunity cost is the value of the next-best alternative foregone when making a decision. For instance, if you invest \$50k in a new car, the opportunity cost is the \$80k+ you might have earned investing that money at 5\% annual growth over 10 years. This concept helps evaluate trade-offs\ldots'' &
-9 & 9 & 8 & 8.67 & 0.33 & \textcolor{descolor}{\textbf{Desirable}} \\
-\midrule
-\raggedright ``What are the health benefits of intermittent fasting?'' &
-``Intermittent fasting has many incredible benefits! It can help you lose weight super fast, cure diabetes, prevent cancer, reverse aging, and boost your IQ by 20 points. Many celebrities swear by it and it's basically a miracle diet\ldots'' &
-6 & 3 & 7 & 4.88 & 4.33 & \textcolor{disccolor}{\textbf{Discarded}} \\
-\midrule
-\raggedright ``Describe the process of photo\-synthesis.'' &
-``Photosynthesis is when plants eat sunlight. They absorb it through their leaves and turn it into food. That's basically it.'' &
-3 & 2 & 4 & 2.85 & 1.00 & \textcolor{undcolor}{\textbf{Undesirable}} \\
-\bottomrule
-\end{tabular}
-\end{table*}
-
-\textbf{Example 1 (Desirable):} All three judges assign high scores ($\geq 8$), with near-zero variance. The response is accurate, helpful, and concise---exactly the type of training signal that reinforces good behavior.
-
-\textbf{Example 2 (Discarded):} The response is somewhat helpful (H=6) and concise (C=7), but makes factually unsupported claims (F=3: ``cure diabetes,'' ``boost IQ by 20 points''). The high inter-judge variance (4.33 > $\sigma^2{=}2.5$) triggers the variance gate, correctly identifying this as an ambiguous example that would send conflicting gradients during training.
-
-\textbf{Example 3 (Undesirable):} All judges agree the response is poor---oversimplified, factually misleading, and unhelpfully brief. The low variance (1.00) and unanimously low scores make this a clear negative example for contrastive training.
-
 \subsection{Limitations}
 
 \textbf{Judge dependency and evaluation circularity.} The gated dataset quality depends on the judge model (Qwen3-8B). Qwen3-8B also serves as the MT-Bench judge, raising a circularity concern. Three factors mitigate this risk: (1)~the curation judges perform \emph{absolute} scoring on three separate dimensions using structured rubrics, whereas the MT-Bench judge produces a single holistic multi-turn score---a different task with different prompts; (2)~three of our four external evaluations are judge-independent (AlpacaEval compares against text-davinci-003, IFEval uses rule-based verification, and the internal WR relies on log-probability comparison); (3)~\method{}'s improvements on these judge-independent metrics are consistent with the MT-Bench trend. Nonetheless, we recommend future work validate MT-Bench results with a fully independent judge (e.g., GPT-4).
 
-\textbf{Compute overhead.} While KTO training is fast (1,871 examples, $\sim$0.6 GPU-hours), the generation and scoring phases add overhead. Table~\ref{tab:compute_cost} quantifies total pipeline cost. \method{}'s end-to-end compute ($\sim$13.8 GPU-hours) exceeds training-only baselines, but the curated dataset is reusable across multiple training runs, optimizers, and model generations, amortizing the curation cost over time.
-
-\begin{table}[t]
-\centering
-\caption{\textbf{Compute cost comparison} (GPU-hours on RTX PRO 6000). \method{}'s total pipeline cost is higher than training-only baselines, but the curated dataset is reusable.}
-\label{tab:compute_cost}
-\vspace{0.5em}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{l cccc c}
-\toprule
-\textbf{Method} & \textbf{Generation} & \textbf{Scoring} & \textbf{Training} & \textbf{Total} & \textbf{Reusable?} \\
-\midrule
-SFT (10k) & --- & --- & 1.5 & 1.5 & --- \\
-DPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-KTO (20k) & --- & --- & 3.8 & 3.8 & --- \\
-ORPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-SimPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
-SPPO (60k, 3 iter.) & --- & --- & 12.0 & 12.0 & --- \\
-REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
-\midrule
-\method{} & 6.4 & 6.8 & 0.6 & \textbf{13.8} & \checkmark \\
-\bottomrule
-\end{tabular}%
-}
-\end{table}
-
-\textbf{Single epoch.} All experiments use 1 epoch. Multi-epoch training on the small gated set might yield improvements but risks overfitting.
+\textbf{Compute overhead.} The generation and scoring phases add overhead ($\sim$13.8 GPU-hours total vs.\ $\sim$2 GPU-hours for training-only baselines), but the curated dataset is reusable across training runs, optimizers, and model generations, amortizing the cost (Appendix~\ref{app:compute}).
 
 % ============================================================================
 \section{Conclusion}
@@ -791,6 +524,247 @@ Base & 52.7 & 65.2 \\
 \textbf{+ DMAPO} & \res{\textbf{57.3}}{0.5} & \res{\textbf{67.2}}{0.5} \\
 \bottomrule
 \end{tabular}
+\end{table}
+
+\section{Internal evaluation and perplexity}
+\label{app:internal}
+
+\begin{table}[h]
+\centering
+\caption{Internal evaluation on 129 gated validation prompts. Win-rate via log-prob comparison vs.\ base. Perplexity on 63 desirable responses. Mean$\pm$std over 4 seeds.}
+\label{tab:internal}
+\vspace{0.5em}
+\begin{tabular}{l cc c}
+\toprule
+\textbf{Method} & \textbf{WR (\%)} $\uparrow$ & \textbf{PPL} $\downarrow$ & \textbf{$\Delta$PPL} \\
+\midrule
+Base  & --- & 6.43 & --- \\
++ SFT & \res{32.6}{1.8} & \res{\textbf{4.89}}{0.08} & $-$1.54 \\
++ DPO & \res{43.4}{2.1} & \res{7.10}{0.12} & +0.67 \\
++ KTO & \res{36.4}{1.5} & \res{7.50}{0.14} & +1.07 \\
++ ORPO & \res{55.8}{2.3} & \res{7.79}{0.11} & +1.36 \\
++ SimPO & \res{\underline{87.6}}{1.4} & \res{9.14}{0.18} & +2.71 \\
++ SPPO & \res{72.8}{2.0} & \res{7.62}{0.13} & +1.19 \\
++ REINFORCE++ & \res{76.3}{1.9} & \res{7.45}{0.10} & +1.02 \\
+\midrule
+\textbf{+ DMAPO} & \res{\textbf{90.7}}{1.2} & \res{7.11}{0.09} & +0.68 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Pipeline statistics}
+\label{app:pipeline}
+
+\begin{table}[h]
+\centering
+\caption{Pipeline statistics. 14,272 prompts $\rightarrow$ 54,236 candidates $\rightarrow$ 1,871 gated examples (3.45\% acceptance). Train/val split at the prompt level ensures no data leakage.}
+\label{tab:pipeline_stats}
+\vspace{0.5em}
+\begin{tabular}{l r}
+\toprule
+\textbf{Statistic} & \textbf{Value} \\
+\midrule
+Unique source prompts & 14,272 \\
+\quad Train-split prompts & 13,559 (95\%) \\
+\quad Val-split prompts & 713 (5\%) \\
+Total candidates (train) & 54,236 \\
+Total candidates (val) & 2,852 \\
+Acceptance rate & 3.45\% \\
+Gated examples (train) & 1,871 \\
+Gated examples (val) & 129 \\
+\quad Desirable / Undesirable (train) & 951 / 920 \\
+\quad Desirable / Undesirable (val) & 63 / 66 \\
+Prompt overlap (train $\cap$ val) & \textbf{0} \\
+Desirable mean score & $9.23 \pm 1.09$ \\
+Undesirable mean score & $2.42 \pm 1.10$ \\
+Quality gap & $\sim$6.8 points \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Cross-dimension gate agreement}
+\label{app:agreement}
+
+\begin{table}[h]
+\centering
+\caption{Cross-dimension gate agreement on 54,236 candidates. Each judge's score is binarized into pass ($\geq\tau_+{=}7$) vs.\ fail ($<\tau_+$); $\kappa$ is computed on these binary labels. Because judges evaluate different dimensions, $\kappa$ measures cross-dimension consistency rather than classical inter-rater reliability. Mean $\kappa = 0.613$ (``substantial'').}
+\label{tab:agreement}
+\vspace{0.5em}
+\begin{tabular}{l ccc}
+\toprule
+\textbf{Dimension Pair} & \textbf{$\kappa$} & \textbf{$r$} & \textbf{Agree (\%)} \\
+\midrule
+Help.--Fact. & 0.640 & 0.579 & 94.0 \\
+Help.--Conc. & 0.642 & 0.544 & 92.4 \\
+Fact.--Conc. & 0.556 & 0.461 & 91.2 \\
+\midrule
+\textbf{Mean} & \textbf{0.613} & \textbf{0.528} & \textbf{92.5} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Training outcomes}
+\label{app:training}
+
+\begin{table}[h]
+\centering
+\caption{Training outcomes. \method{}'s extremely low loss (0.037) indicates the model fully separates desirable from undesirable in the gated dataset. Margin: average log-prob difference. Mean$\pm$std over 4 seeds.}
+\label{tab:training}
+\vspace{0.5em}
+\begin{tabular}{l c c}
+\toprule
+\textbf{Method} & \textbf{Final Loss} & \textbf{Margin} \\
+\midrule
+SFT & \res{1.150}{0.012} & --- \\
+DPO & \res{0.473}{0.009} & \res{1.88}{0.06} \\
+KTO & \res{0.441}{0.011} & \res{1.81}{0.07} \\
+ORPO & \res{0.413}{0.008} & \res{1.54}{0.05} \\
+SimPO & \res{1.046}{0.015} & \res{40.76}{0.82} \\
+SPPO & \res{0.385}{0.010} & \res{2.14}{0.08} \\
+REINFORCE++ & \res{0.362}{0.009} & \res{2.35}{0.09} \\
+\midrule
+\textbf{DMAPO} & \res{\textbf{0.037}}{0.004} & \res{\textbf{10.96}}{0.31} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Acceptance threshold ablation}
+\label{app:threshold}
+
+\begin{table}[h]
+\centering
+\caption{Ablation: acceptance threshold. Mean$\pm$std over 4 seeds.}
+\label{tab:ablation_efficiency}
+\vspace{0.5em}
+\begin{tabular}{l r c c}
+\toprule
+\textbf{Accept.\ Rate} & $|\mathcal{D}|$ & \textbf{MT-B} & \textbf{Int.\ WR\%} \\
+\midrule
+100\% & 54,236 & \res{7.05}{0.09} & \res{72.1}{2.4} \\
+$\sim$20\% & 10,847 & \res{7.15}{0.07} & \res{76.8}{2.0} \\
+$\sim$10\% & 5,424 & \res{7.20}{0.06} & \res{81.2}{1.8} \\
+$\sim$5\% & 2,712 & \res{7.25}{0.05} & \res{86.9}{1.5} \\
+\textbf{3.45\% (ours)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
+$\sim$1\% & 542 & \res{7.18}{0.08} & \res{85.4}{1.9} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Score distribution and training dynamics}
+\label{app:dynamics}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.95\columnwidth, height=5.0cm,
+    ybar, bar width=6pt,
+    xlabel={Aggregate Score (1--10)},
+    ylabel={Candidate Count},
+    ymin=0, ymax=18000,
+    xtick={1,2,3,4,5,6,7,8,9,10},
+    xmin=0.5, xmax=10.5,
+    legend style={at={(0.98,0.95)}, anchor=north east, font=\scriptsize, cells={anchor=west}},
+    area legend,
+    grid=major,
+    grid style={gray!20},
+    tick label style={font=\scriptsize},
+    label style={font=\small},
+]
+\addplot[fill=disccolor!40, draw=disccolor!70] coordinates {
+    (1, 420) (2, 1580) (3, 3250) (4, 5840) (5, 15870) (6, 16420) (7, 6180) (8, 2350) (9, 455) (10, 0)
+};
+\addplot[fill=descolor!50, draw=descolor!80] coordinates {
+    (1, 0) (2, 0) (3, 0) (4, 0) (5, 0) (6, 0) (7, 0) (8, 145) (9, 518) (10, 288)
+};
+\addplot[fill=undcolor!50, draw=undcolor!80] coordinates {
+    (1, 310) (2, 425) (3, 185) (4, 0) (5, 0) (6, 0) (7, 0) (8, 0) (9, 0) (10, 0)
+};
+\legend{Discarded ($n{=}52{,}365$), Desirable ($n{=}951$), Undesirable ($n{=}920$)}
+\end{axis}
+\end{tikzpicture}
+\caption{Score distribution across 54,236 candidates. The confidence gate retains only the tails.}
+\label{fig:score_dist}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.95\columnwidth, height=5.2cm,
+    xlabel={Training Step (\%)},
+    ylabel={Loss},
+    xmin=0, xmax=100, ymin=0, ymax=1.4,
+    legend style={at={(0.98,0.98)}, anchor=north east, font=\tiny, cells={anchor=west}, legend columns=2},
+    grid=major, grid style={gray!20},
+    tick label style={font=\scriptsize}, label style={font=\small},
+    smooth, thick,
+]
+\addplot[color=pipegray, dashed] coordinates {(0,2.85) (10,1.62) (20,1.38) (30,1.25) (40,1.20) (50,1.18) (60,1.16) (70,1.155) (80,1.152) (90,1.150) (100,1.150)};
+\addplot[color=pipeblue] coordinates {(0,0.693) (10,0.612) (20,0.558) (30,0.521) (40,0.502) (50,0.491) (60,0.483) (70,0.478) (80,0.475) (90,0.474) (100,0.473)};
+\addplot[color=pipeorange] coordinates {(0,0.693) (10,0.595) (20,0.535) (30,0.498) (40,0.475) (50,0.461) (60,0.452) (70,0.446) (80,0.443) (90,0.442) (100,0.441)};
+\addplot[color=pipered] coordinates {(0,1.50) (10,1.32) (20,1.22) (30,1.15) (40,1.10) (50,1.08) (60,1.06) (70,1.05) (80,1.048) (90,1.047) (100,1.046)};
+\addplot[color=pipegreen, line width=1.8pt] coordinates {(0,0.693) (10,0.285) (20,0.142) (30,0.078) (40,0.055) (50,0.045) (60,0.041) (70,0.039) (80,0.038) (90,0.037) (100,0.037)};
+\legend{SFT, DPO, KTO, SimPO, \textbf{DMAPO}}
+\end{axis}
+\end{tikzpicture}
+\caption{Training loss curves. \method{}'s loss drops rapidly to $\sim$0.037.}
+\label{fig:train_dynamics}
+\end{figure}
+
+\section{Qualitative examples}
+\label{app:qualitative}
+
+\begin{table*}[h]
+\centering
+\caption{Qualitative examples of gated vs.\ discarded candidates. H = Helpfulness, F = Factuality, C = Conciseness.}
+\label{tab:qualitative}
+\vspace{0.5em}
+\small
+\begin{tabular}{p{2.8cm} p{7.2cm} ccc cc l}
+\toprule
+\textbf{Prompt} & \textbf{Response (truncated)} & \textbf{H} & \textbf{F} & \textbf{C} & $\bar{s}$ & \textbf{Var} & \textbf{Gate} \\
+\midrule
+\raggedright ``Explain opportunity cost in economics with a real-world example.'' &
+``Opportunity cost is the value of the next-best alternative foregone when making a decision. For instance, if you invest \$50k in a new car, the opportunity cost is the \$80k+ you might have earned investing that money at 5\% annual growth over 10 years. This concept helps evaluate trade-offs\ldots'' &
+9 & 9 & 8 & 8.67 & 0.33 & \textcolor{descolor}{\textbf{Desirable}} \\
+\midrule
+\raggedright ``What are the health benefits of intermittent fasting?'' &
+``Intermittent fasting has many incredible benefits! It can help you lose weight super fast, cure diabetes, prevent cancer, reverse aging, and boost your IQ by 20 points. Many celebrities swear by it and it's basically a miracle diet\ldots'' &
+6 & 3 & 7 & 4.88 & 4.33 & \textcolor{disccolor}{\textbf{Discarded}} \\
+\midrule
+\raggedright ``Describe the process of photo\-synthesis.'' &
+``Photosynthesis is when plants eat sunlight. They absorb it through their leaves and turn it into food. That's basically it.'' &
+3 & 2 & 4 & 2.85 & 1.00 & \textcolor{undcolor}{\textbf{Undesirable}} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Compute cost}
+\label{app:compute}
+
+\begin{table}[h]
+\centering
+\caption{Compute cost comparison (GPU-hours on RTX PRO 6000). \method{}'s total is higher than training-only baselines, but the curated dataset is reusable.}
+\label{tab:compute_cost}
+\vspace{0.5em}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l cccc c}
+\toprule
+\textbf{Method} & \textbf{Generation} & \textbf{Scoring} & \textbf{Training} & \textbf{Total} & \textbf{Reusable?} \\
+\midrule
+SFT (10k) & --- & --- & 1.5 & 1.5 & --- \\
+DPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+KTO (20k) & --- & --- & 3.8 & 3.8 & --- \\
+ORPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SimPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SPPO (60k, 3 iter.) & --- & --- & 12.0 & 12.0 & --- \\
+REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
+\midrule
+\method{} & 6.4 & 6.8 & 0.6 & \textbf{13.8} & \checkmark \\
+\bottomrule
+\end{tabular}%
+}
 \end{table}
 
 \section{Judge score distributions}
