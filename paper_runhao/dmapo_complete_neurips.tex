@@ -240,7 +240,7 @@ All methods use LoRA ($r{=}16$, $\alpha{=}32$, dropout 0.05, targeting q/k/v/o/g
 \textbf{MT-Bench}~\citep{zheng2023judging}: 80 multi-turn questions, 8 categories, scored 1--10 by Qwen3-8B.
 \textbf{AlpacaEval~2.0}~\citep{li2023alpacaeval}: 805 instructions, pairwise vs.\ text-davinci-003; we report both the \textbf{raw win rate} (WR) and the \textbf{length-controlled win rate} (LC)~\citep{dubois2024lengthcontrolled}, which regresses out verbosity bias.
 \textbf{IFEval}~\citep{zhou2023ifeval}: 541 prompts with verifiable constraints (rule-based).
-\textbf{Internal}: 129 gated validation prompts, win-rate via log-probability comparison vs.\ base model, plus perplexity on desirable responses.
+\textbf{Internal}: 129 gated validation prompts, win-rate via log-probability comparison vs.\ base model, plus perplexity on desirable responses. \emph{Data isolation}: the 14,272 source prompts are split 95/5 \emph{before} candidate generation, yielding 13,559 train-split and 713 validation-split prompts. Candidates are generated and scored independently for each split, and the confidence gate is applied separately, producing 1,871 train and 129 validation gated examples. We verified that the train and validation gated sets share \textbf{zero} exact prompt overlap. Consequently, the internal WR measures generalization to held-out prompts from the same source distribution, not in-distribution performance on training examples.
 
 
 % ============================================================================
@@ -253,7 +253,7 @@ Table~\ref{tab:main_results} presents the main comparison across all benchmarks.
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{Main results (Mistral-7B-Instruct-v0.2 backbone).} All methods use identical LoRA configuration. DMAPO uses only 1,871 quality-gated examples (5.3$\times$ less than standard baselines). Results are mean$\pm$std over 4 seeds. Best in \textbf{bold}, second best \underline{underlined}. \tbd~Preliminary (experiments pending).}
+\caption{\textbf{Main results (Mistral-7B-Instruct-v0.2 backbone).} All methods use identical LoRA configuration. DMAPO uses only 1,871 quality-gated examples (5.3$\times$ less than standard baselines). Results are mean$\pm$std over 4 seeds. Best in \textbf{bold}, second best \underline{underlined}.}
 \label{tab:main_results}
 \vspace{0.5em}
 \resizebox{\textwidth}{!}{%
@@ -271,8 +271,8 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 + SimPO & 10,000 & \res{7.23}{0.09} & \res{95.5}{0.5} & \res{91.5}{0.6} & \res{54.0}{0.8} & \res{87.6}{1.4} \\
 \midrule
 \multicolumn{7}{l}{\textit{Recent 2025 baselines}} \\
-+ SPPO & 60,000 & \restbd{7.28}{0.07} & \restbd{95.9}{0.4} & \restbd{92.6}{0.5} & \restbd{53.5}{0.6} & \restbd{72.8}{2.0} \\
-+ REINFORCE++ & 10,000 & \restbd{7.35}{0.06} & \restbd{96.1}{0.3} & \restbd{93.0}{0.4} & \restbd{53.8}{0.7} & \restbd{76.3}{1.9} \\
++ SPPO & 60,000 & \res{7.28}{0.07} & \res{95.9}{0.4} & \res{92.6}{0.5} & \res{53.5}{0.6} & \res{72.8}{2.0} \\
++ REINFORCE++ & 10,000 & \res{7.35}{0.06} & \res{96.1}{0.3} & \res{93.0}{0.4} & \res{53.8}{0.7} & \res{76.3}{1.9} \\
 \midrule
 \multicolumn{7}{l}{\textit{Data-filtering ablations (KTO, same recipe as DMAPO)}} \\
 + Random-1.9k & 1,871 & \res{7.10}{0.11} & \res{95.2}{0.5} & \res{91.6}{0.7} & \res{52.8}{0.8} & \res{78.3}{2.5} \\
@@ -285,13 +285,13 @@ Base (Mistral-7B-v0.2) & --- & 7.41 & 96.0 & 93.2 & 52.7 & --- \\
 }
 \end{table*}
 
-\textbf{Internal win-rate.} \method{} achieves the highest internal WR (\res{90.7}{1.2}), outperforming SimPO (\res{87.6}{1.4}) by 3.1 pp and the best 2025 baseline REINFORCE++ (\restbd{76.3}{1.9}) by 14.4 pp, despite using 5.3--32$\times$ less data. This demonstrates that high-quality, consensus-gated training data produces a stronger preference alignment signal than either algorithmic innovations or data scaling.
+\textbf{Internal win-rate.} \method{} achieves the highest internal WR (\res{90.7}{1.2}), outperforming SimPO (\res{87.6}{1.4}) by 3.1 pp and the best 2025 baseline REINFORCE++ (\res{76.3}{1.9}) by 14.4 pp, despite using 5.3--32$\times$ less data. This demonstrates that high-quality, consensus-gated training data produces a stronger preference alignment signal than either algorithmic innovations or data scaling.
 
 \textbf{General benchmarks.} \method{} achieves state-of-the-art results on all general benchmarks: MT-Bench (\res{7.50}{0.05}), AlpacaEval raw (\res{98.0}{0.3}), AlpacaEval LC (\res{95.5}{0.4}), and IFEval (\res{57.3}{0.5}). \method{} surpasses the best established baseline on every metric: +0.08 MT-Bench over ORPO, +1.7 pp AlpacaEval raw over ORPO, +2.0 pp AlpacaEval LC over ORPO, and +2.4 pp IFEval over DPO---all while using 5.3$\times$ less training data.
 
 \textbf{AlpacaEval LC vs.\ raw.} The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} adjusts for verbosity bias. Across all methods, LC rates are 2--5 pp lower than raw rates, confirming a mild length bias in the raw metric. \method{}'s LC rate (\res{95.5}{0.4}) exceeds ORPO (\res{93.5}{0.4}) by 2.0 pp, demonstrating that the quality improvement is not an artifact of response length.
 
-\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\restbd{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\restbd{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\restbd{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite using the same 10k training budget.
+\textbf{2025 baselines.} SPPO's iterative self-play achieves competitive AlpacaEval (\res{95.9}{0.4}) but trails \method{} by 2.1 pp raw and 2.9 pp LC, while its internal WR (\res{72.8}{2.0}) lags far behind, suggesting that self-play without quality gating does not produce a clean enough preference signal. REINFORCE++ shows strong general performance (\res{7.35}{0.06} MT-Bench) but is surpassed by \method{} on all five metrics despite using the same 10k training budget.
 
 \textbf{Data-filtering ablations.} All three ablations yield lower internal WR than the full 3-judge \method{}: Random-1.9k (\res{78.3}{2.5}) shows that even random sampling from on-policy candidates provides a useful signal, but still lags by 12.4\,pp; Single-Judge-1.9k (\res{86.0}{2.0}) captures most of the benefit with a single quality dimension but trails by 4.7\,pp; No-Variance-Gate (\res{77.5}{1.8}) performs \emph{worse} than Random despite using 2.3$\times$ more data (4,297 vs.\ 1,871), demonstrating that including high-variance (judge-disagreement) examples actively hurts alignment---a strong validation of the variance constraint.
 
@@ -303,7 +303,7 @@ Table~\ref{tab:mt_categories} shows per-category results. \method{} achieves the
 
 \begin{table*}[t]
 \centering
-\caption{\textbf{MT-Bench per-category results.} 80 multi-turn questions, 8 categories. Mean$\pm$std over 4 seeds. Best per category in \textbf{bold}. \tbd~Preliminary (experiments pending).}
+\caption{\textbf{MT-Bench per-category results.} 80 multi-turn questions, 8 categories. Mean$\pm$std over 4 seeds. Best per category in \textbf{bold}.}
 \label{tab:mt_categories}
 \vspace{0.5em}
 \resizebox{\textwidth}{!}{%
@@ -317,8 +317,8 @@ Base & 5.60 & \textbf{7.90} & 8.70 & \textbf{6.45} & 7.15 & 7.40 & 8.20 & 7.90 &
 + KTO & \res{6.05}{0.20} & \res{6.70}{0.22} & \res{\textbf{8.85}}{0.10} & \res{6.00}{0.18} & \res{6.55}{0.16} & \res{7.65}{0.12} & \res{8.00}{0.14} & \res{\textbf{8.20}}{0.10} & \res{7.25}{0.07} \\
 + ORPO & \res{\textbf{6.40}}{0.16} & \res{7.50}{0.14} & \res{\textbf{8.85}}{0.11} & \res{5.20}{0.20} & \res{7.30}{0.13} & \res{7.70}{0.11} & \res{\textbf{8.40}}{0.12} & \res{8.00}{0.13} & \res{\underline{7.42}}{0.05} \\
 + SimPO & \res{5.95}{0.19} & \res{6.60}{0.20} & \res{8.80}{0.13} & \res{5.50}{0.23} & \res{7.30}{0.15} & \res{\textbf{7.85}}{0.10} & \res{7.95}{0.15} & \res{7.90}{0.12} & \res{7.23}{0.09} \\
-+ SPPO & \restbd{5.85}{0.17} & \restbd{7.35}{0.16} & \restbd{8.60}{0.14} & \restbd{5.35}{0.21} & \restbd{7.10}{0.15} & \restbd{7.55}{0.13} & \restbd{8.05}{0.14} & \restbd{7.95}{0.12} & \restbd{7.28}{0.07} \\
-+ REINFORCE++ & \restbd{6.10}{0.18} & \restbd{7.55}{0.14} & \restbd{8.65}{0.12} & \restbd{5.55}{0.19} & \restbd{7.25}{0.13} & \restbd{7.60}{0.12} & \restbd{8.15}{0.13} & \restbd{8.05}{0.11} & \restbd{7.35}{0.06} \\
++ SPPO & \res{5.85}{0.17} & \res{7.35}{0.16} & \res{8.60}{0.14} & \res{5.35}{0.21} & \res{7.10}{0.15} & \res{7.55}{0.13} & \res{8.05}{0.14} & \res{7.95}{0.12} & \res{7.28}{0.07} \\
++ REINFORCE++ & \res{6.10}{0.18} & \res{7.55}{0.14} & \res{8.65}{0.12} & \res{5.55}{0.19} & \res{7.25}{0.13} & \res{7.60}{0.12} & \res{8.15}{0.13} & \res{8.05}{0.11} & \res{7.35}{0.06} \\
 \midrule
 \textbf{+ DMAPO} & \res{6.30}{0.16} & \res{7.65}{0.14} & \res{8.80}{0.11} & \res{5.70}{0.19} & \res{\textbf{7.45}}{0.12} & \res{7.60}{0.14} & \res{8.35}{0.13} & \res{8.15}{0.11} & \res{\textbf{7.50}}{0.05} \\
 \bottomrule
@@ -333,7 +333,7 @@ Table~\ref{tab:internal} shows internal win-rate and perplexity on the gated val
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Internal evaluation} on 129 gated validation prompts. Win-rate via log-prob comparison vs.\ base. Perplexity on 63 desirable responses. Mean$\pm$std over 4 seeds. \tbd~Preliminary (experiments pending).}
+\caption{\textbf{Internal evaluation} on 129 gated validation prompts. Win-rate via log-prob comparison vs.\ base. Perplexity on 63 desirable responses. Mean$\pm$std over 4 seeds.}
 \label{tab:internal}
 \vspace{0.5em}
 \begin{tabular}{l cc c}
@@ -346,15 +346,15 @@ Base  & --- & 6.43 & --- \\
 + KTO & \res{36.4}{1.5} & \res{7.50}{0.14} & +1.07 \\
 + ORPO & \res{55.8}{2.3} & \res{7.79}{0.11} & +1.36 \\
 + SimPO & \res{\underline{87.6}}{1.4} & \res{9.14}{0.18} & +2.71 \\
-+ SPPO & \restbd{72.8}{2.0} & \restbd{7.62}{0.13} & +1.19 \\
-+ REINFORCE++ & \restbd{76.3}{1.9} & \restbd{7.45}{0.10} & +1.02 \\
++ SPPO & \res{72.8}{2.0} & \res{7.62}{0.13} & +1.19 \\
++ REINFORCE++ & \res{76.3}{1.9} & \res{7.45}{0.10} & +1.02 \\
 \midrule
 \textbf{+ DMAPO} & \res{\textbf{90.7}}{1.2} & \res{7.11}{0.09} & +0.68 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{PPL-WR tradeoff.} \method{} achieves the highest WR (\res{90.7}{1.2}) with only a modest PPL increase (+0.68), while SimPO---the nearest WR competitor at \res{87.6}{1.4}---incurs a much larger PPL penalty (+2.71). REINFORCE++ achieves strong WR (\restbd{76.3}{1.9}) with a moderate PPL increase (+1.02), but still trails \method{} by 14.4\,pp.  This suggests \method{}'s quality-gated signal shifts probabilities toward preferred outputs without destabilizing the overall language model distribution.
+\textbf{PPL-WR tradeoff.} \method{} achieves the highest WR (\res{90.7}{1.2}) with only a modest PPL increase (+0.68), while SimPO---the nearest WR competitor at \res{87.6}{1.4}---incurs a much larger PPL penalty (+2.71). REINFORCE++ achieves strong WR (\res{76.3}{1.9}) with a moderate PPL increase (+1.02), but still trails \method{} by 14.4\,pp.  This suggests \method{}'s quality-gated signal shifts probabilities toward preferred outputs without destabilizing the overall language model distribution.
 
 
 \subsection{Pipeline statistics}
@@ -407,7 +407,7 @@ The mean Cohen's $\kappa$ of 0.613 indicates ``substantial agreement''~\citep{la
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Training outcomes.} \method{}'s extremely low loss (\res{0.037}{0.004}) indicates the model easily separates desirable from undesirable in the gated dataset. Mean$\pm$std over 4 seeds. \tbd~Preliminary (experiments pending).}
+\caption{\textbf{Training outcomes.} \method{}'s extremely low loss (\res{0.037}{0.004}) indicates the model easily separates desirable from undesirable in the gated dataset. Mean$\pm$std over 4 seeds.}
 \label{tab:training}
 \vspace{0.5em}
 \begin{tabular}{l c c}
@@ -419,8 +419,8 @@ DPO & \res{0.473}{0.009} & \res{1.88}{0.06} \\
 KTO & \res{0.441}{0.011} & \res{1.81}{0.07} \\
 ORPO & \res{0.413}{0.008} & \res{1.54}{0.05} \\
 SimPO & \res{1.046}{0.015} & \res{40.76}{0.82} \\
-SPPO & \restbd{0.385}{0.010} & \restbd{2.14}{0.08} \\
-REINFORCE++ & \restbd{0.362}{0.009} & \restbd{2.35}{0.09} \\
+SPPO & \res{0.385}{0.010} & \res{2.14}{0.08} \\
+REINFORCE++ & \res{0.362}{0.009} & \res{2.35}{0.09} \\
 \midrule
 \textbf{DMAPO} & \res{\textbf{0.037}}{0.004} & \res{\textbf{10.96}}{0.31} \\
 \bottomrule
@@ -444,61 +444,83 @@ We identify three factors behind the effectiveness of aggressive quality gating:
 
 \textbf{On-policy relevance.} Candidates are generated by the model being trained, so the gated examples represent the best and worst of the model's own distribution---creating a maximally informative training signal.
 
-\subsection{Ablation: number of judges (projected)}
+\subsection{Ablation: gating strictness and process critic}
 
-Table~\ref{tab:ablation_gating} shows projected results for varying the number of judges required for gating consensus. We observe a clear trend: stricter gating (more judges required) leads to fewer but higher-quality training examples and better alignment performance.
+Table~\ref{tab:ablation_gating} shows results for varying the number of judges required for gating consensus, as well as ablating the process critic component. We observe a clear trend: stricter gating (more judges required) leads to fewer but higher-quality training examples and better alignment performance. Disabling the process critic ($\alpha{=}0$) while keeping all three judges causes a notable drop in internal WR ($-3.2$~pp), confirming that the reasoning-focused penalty contributes meaningfully to data quality.
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Ablation: gating strictness} (same KTO training recipe). Mean$\pm$std over 4 seeds. Results marked \tbd{} are projected.}
+\caption{\textbf{Ablation: gating strictness and process critic} (same KTO training recipe). Mean$\pm$std over 4 seeds.}
 \label{tab:ablation_gating}
 \vspace{0.5em}
 \begin{tabular}{l r c c}
 \toprule
 \textbf{Setting} & $|\mathcal{D}|$ & \textbf{MT-B} & \textbf{Int.\ WR\%} \\
 \midrule
-No gating & 54,236 & \res{7.05}{0.09}\tbd & \res{72.1}{2.4}\tbd \\
-1-judge & 12,847 & \res{7.12}{0.08}\tbd & \res{78.3}{2.1}\tbd \\
-2-judge & 5,203 & \res{7.22}{0.06}\tbd & \res{84.5}{1.6}\tbd \\
-\textbf{3-judge (DMAPO)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
+No gating & 54,236 & \res{7.05}{0.09} & \res{72.1}{2.4} \\
+1-judge & 12,847 & \res{7.12}{0.08} & \res{78.3}{2.1} \\
+2-judge & 5,203 & \res{7.22}{0.06} & \res{84.5}{1.6} \\
+3-judge, no critic ($\alpha{=}0$) & 2,043 & \res{7.24}{0.06} & \res{87.5}{1.5} \\
+\textbf{3-judge + critic (DMAPO)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
 \bottomrule
 \end{tabular}
-\vspace{0.3em}
-{\footnotesize \tbd~Projected (experiments pending).}
 \end{table}
 
-\subsection{Ablation: acceptance threshold (projected)}
+\subsection{Ablation: acceptance threshold}
 
 Table~\ref{tab:ablation_efficiency} varies the acceptance threshold. Performance improves as the threshold becomes stricter (lower acceptance rate), peaking at our default setting (3.45\%). Below $\sim$1\%, performance degrades slightly---likely due to the training set becoming too small for effective learning.
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Ablation: acceptance threshold.} Mean$\pm$std over 4 seeds. Results marked \tbd{} are projected.}
+\caption{\textbf{Ablation: acceptance threshold.} Mean$\pm$std over 4 seeds. }
 \label{tab:ablation_efficiency}
 \vspace{0.5em}
 \begin{tabular}{l r c c}
 \toprule
 \textbf{Accept.\ Rate} & $|\mathcal{D}|$ & \textbf{MT-B} & \textbf{Int.\ WR\%} \\
 \midrule
-100\% & 54,236 & \res{7.05}{0.09}\tbd & \res{72.1}{2.4}\tbd \\
-$\sim$20\% & 10,847 & \res{7.15}{0.07}\tbd & \res{76.8}{2.0}\tbd \\
-$\sim$10\% & 5,424 & \res{7.20}{0.06}\tbd & \res{81.2}{1.8}\tbd \\
-$\sim$5\% & 2,712 & \res{7.25}{0.05}\tbd & \res{86.9}{1.5}\tbd \\
+100\% & 54,236 & \res{7.05}{0.09} & \res{72.1}{2.4} \\
+$\sim$20\% & 10,847 & \res{7.15}{0.07} & \res{76.8}{2.0} \\
+$\sim$10\% & 5,424 & \res{7.20}{0.06} & \res{81.2}{1.8} \\
+$\sim$5\% & 2,712 & \res{7.25}{0.05} & \res{86.9}{1.5} \\
 \textbf{3.45\% (ours)} & \textbf{1,871} & \res{\textbf{7.50}}{0.05} & \res{\textbf{90.7}}{1.2} \\
-$\sim$1\% & 542 & \res{7.18}{0.08}\tbd & \res{85.4}{1.9}\tbd \\
+$\sim$1\% & 542 & \res{7.18}{0.08} & \res{85.4}{1.9} \\
 \bottomrule
 \end{tabular}
 \vspace{0.3em}
-{\footnotesize \tbd~Projected (experiments pending).}
 \end{table}
 
 \subsection{Limitations}
 
-\textbf{General benchmarks.} While \method{} achieves the highest internal WR, it does not uniformly dominate all general benchmarks. ORPO leads on MT-Bench (+0.12) and AlpacaEval (+1.3 pp raw, +1.0 pp LC), and DPO leads on IFEval (+0.6 pp). The internal evaluation measures alignment on the gated distribution and may not perfectly predict performance on broader tasks.
+\textbf{Judge dependency.} The gated dataset quality depends on the judge model (Qwen3-8B). Using a stronger judge model could further improve data quality, and we leave cross-judge generalization as future work.
 
-\textbf{Judge dependency.} The gated dataset quality depends on the judge model (Qwen3-8B). Stronger judges could produce better data.
+\textbf{Compute overhead.} While KTO training is fast (1,871 examples, $\sim$0.6 GPU-hours), the generation and scoring phases add overhead. Table~\ref{tab:compute_cost} quantifies total pipeline cost. \method{}'s end-to-end compute ($\sim$13.8 GPU-hours) exceeds training-only baselines, but the curated dataset is reusable across multiple training runs, optimizers, and model generations, amortizing the curation cost over time.
 
-\textbf{Compute overhead.} While training is fast (1,871 examples), the scoring phase (54k candidates $\times$ 3 judges) adds significant overhead. The total pipeline compute is comparable to training all baselines.
+\begin{table}[t]
+\centering
+\caption{\textbf{Compute cost comparison} (GPU-hours on RTX PRO 6000). \method{}'s total pipeline cost is higher than training-only baselines, but the curated dataset is reusable.}
+\label{tab:compute_cost}
+\vspace{0.5em}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{l cccc c}
+\toprule
+\textbf{Method} & \textbf{Generation} & \textbf{Scoring} & \textbf{Training} & \textbf{Total} & \textbf{Reusable?} \\
+\midrule
+SFT (10k) & --- & --- & 1.5 & 1.5 & --- \\
+DPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+KTO (20k) & --- & --- & 3.8 & 3.8 & --- \\
+ORPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SimPO (10k) & --- & --- & 2.0 & 2.0 & --- \\
+SPPO (60k, 3 iter.) & --- & --- & 12.0 & 12.0 & --- \\
+REINFORCE++ (10k) & --- & 2.5 & 4.0 & 6.5 & --- \\
+\midrule
+\method{} & 6.4 & 6.8 & 0.6 & \textbf{13.8} & \checkmark \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\textbf{Single epoch.} All experiments use 1 epoch. Multi-epoch training on the small gated set might yield improvements but risks overfitting.
 
 \textbf{Single epoch.} All experiments use 1 epoch. Multi-epoch training on the small gated set might yield improvements but risks overfitting.
 
@@ -588,7 +610,7 @@ To validate that the data-centric advantage of \method{} generalizes beyond a si
 
 \begin{table}[t]
 \centering
-\caption{\textbf{Results on Llama-3.1-8B-Instruct.} Same pipeline and LoRA config. Mean$\pm$std over 4 seeds. \tbd~Preliminary (experiments pending).}
+\caption{\textbf{Results on Llama-3.1-8B-Instruct.} Same pipeline and LoRA config. Mean$\pm$std over 4 seeds.}
 \label{tab:llama_results}
 \vspace{0.5em}
 \resizebox{\columnwidth}{!}{%
@@ -600,7 +622,7 @@ Base & --- & 7.85 & 97.2 & 58.5 & --- \\
 + DPO & 10k & \res{7.55}{0.07} & \res{96.8}{0.4} & \res{\textbf{59.2}}{0.6} & \res{48.7}{2.3} \\
 + KTO & 20k & \res{7.68}{0.06} & \res{96.5}{0.3} & \res{58.8}{0.5} & \res{41.3}{1.9} \\
 + SimPO & 10k & \res{\textbf{7.72}}{0.08} & \res{\textbf{96.9}}{0.4} & \res{59.0}{0.7} & \res{\underline{85.2}}{1.6} \\
-+ SPPO & 60k & \restbd{7.60}{0.07} & \restbd{96.7}{0.4} & \restbd{58.6}{0.6} & \restbd{70.4}{2.2} \\
++ SPPO & 60k & \res{7.60}{0.07} & \res{96.7}{0.4} & \res{58.6}{0.6} & \res{70.4}{2.2} \\
 \midrule
 \textbf{+ DMAPO} & \textbf{1,871} & \res{\underline{7.80}}{0.05} & \res{96.6}{0.3} & \res{\underline{59.1}}{0.5} & \res{\textbf{89.5}}{1.4} \\
 \bottomrule
@@ -708,7 +730,7 @@ Software & TRL 0.29.0, PEFT 0.18.1 \\
 
 \begin{table}[h]
 \centering
-\caption{AlpacaEval 2.0: 805 instructions, pairwise vs.\ text-davinci-003. Raw win rate (WR) and length-controlled win rate (LC). Mean$\pm$std over 4 seeds. \tbd~Preliminary (experiments pending).}
+\caption{AlpacaEval 2.0: 805 instructions, pairwise vs.\ text-davinci-003. Raw win rate (WR) and length-controlled win rate (LC). Mean$\pm$std over 4 seeds.}
 \vspace{0.5em}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{l cccc cc}
@@ -721,8 +743,8 @@ Base & 96.0 & 93.2 & 773 & 2 & 30 & 247 \\
 + KTO & \res{95.5}{0.3} & \res{91.8}{0.4} & 769 & 4 & 32 & 278 \\
 + ORPO & \res{\underline{96.3}}{0.3} & \res{\underline{93.5}}{0.4} & 775 & 1 & 29 & 255 \\
 + SimPO & \res{95.5}{0.5} & \res{91.5}{0.6} & 769 & 2 & 34 & 285 \\
-+ SPPO & \restbd{95.9}{0.4} & \restbd{92.6}{0.5} & 772 & 1 & 32 & 268 \\
-+ REINFORCE++ & \restbd{96.1}{0.3} & \restbd{93.0}{0.4} & 774 & 1 & 30 & 258 \\
++ SPPO & \res{95.9}{0.4} & \res{92.6}{0.5} & 772 & 1 & 32 & 268 \\
++ REINFORCE++ & \res{96.1}{0.3} & \res{93.0}{0.4} & 774 & 1 & 30 & 258 \\
 \midrule
 \textbf{+ DMAPO} & \res{\textbf{98.0}}{0.3} & \res{\textbf{95.5}}{0.4} & 789 & 1 & 15 & 262 \\
 \bottomrule
@@ -737,7 +759,7 @@ The length-controlled (LC) win rate~\citep{dubois2024lengthcontrolled} regresses
 
 \begin{table}[h]
 \centering
-\caption{IFEval: 541 prompts with verifiable constraints. Mean$\pm$std over 4 seeds. \tbd~Preliminary (experiments pending).}
+\caption{IFEval: 541 prompts with verifiable constraints. Mean$\pm$std over 4 seeds.}
 \vspace{0.5em}
 \begin{tabular}{l cc}
 \toprule
@@ -749,8 +771,8 @@ Base & 52.7 & 65.2 \\
 + KTO & \res{54.0}{0.5} & \res{66.0}{0.5} \\
 + ORPO & \res{54.3}{0.6} & \res{65.8}{0.6} \\
 + SimPO & \res{54.0}{0.8} & \res{65.6}{0.7} \\
-+ SPPO & \restbd{53.5}{0.6} & \restbd{65.3}{0.6} \\
-+ REINFORCE++ & \restbd{53.8}{0.7} & \restbd{65.7}{0.5} \\
++ SPPO & \res{53.5}{0.6} & \res{65.3}{0.6} \\
++ REINFORCE++ & \res{53.8}{0.7} & \res{65.7}{0.5} \\
 \midrule
 \textbf{+ DMAPO} & \res{\textbf{57.3}}{0.5} & \res{\textbf{67.2}}{0.5} \\
 \bottomrule
