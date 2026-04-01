@@ -1,54 +1,57 @@
-# DMAPO — Open Problems
+# DMAPO — Remaining Issue
 
 Last updated: 2026-03-31
 
-All tex/writing/technical issues have been resolved. The only remaining item is the teaser figure.
+All tex/writing/structural issues resolved. Paper fits COLM 9-page limit. Only remaining item:
 
 ---
 
-## 🔴 pic.png needs to be regenerated
+## 🔴 Teaser figure (DMAPO(1).pdf / pic.png) needs correction
 
-The current `pic.png` is outdated and inconsistent with the paper. It must be regenerated before submission.
+### Panel A — Pipeline diagram
 
-### Panel A (Pipeline diagram)
+| Problem | Fix |
+|---------|-----|
+| "Train **onbinary** labels" | → "Train **on binary** labels" (add space) |
+| Green "已接受" Chinese text in Confidence Gate box | Remove completely |
 
-| Element | Current (wrong) | Required |
-|---------|-----------------|----------|
-| KTO box text | "Train onbinary labels" | "Train on binary labels" (missing space) |
-| Background | Chinese "已接受" watermark visible | Remove all watermarks |
+### Panel B — Bar chart values are wrong
 
-### Panel B (Bar chart)
+Current values vs. correct values from Table 1:
 
-| Element | Current (wrong) | Required |
-|---------|-----------------|----------|
-| DMAPO bar value | **7.62** | **7.50** |
-| ORPO bar value | **7.15** | **7.42** |
-| SFT bar value | **7.18** | **6.71** |
-| DPO bar value | **7.08** | **7.08** (OK) |
-| KTO bar value | **7.22** | **7.25** |
-| SimPO bar value | **7.25** | **7.23** |
-| Missing bars | — | Add **SPPO (7.28)** and **REINFORCE++ (7.35)** |
-| Panel title | "Only DMAPO Improves Over Pretrained Base" | Incorrect — ORPO (7.42) also beats Base (7.41). Change to e.g. "MT-Bench Scores (Pretrained Base = 7.41)" |
-| Base line label | "Pretrained Base (7.41)" | OK, keep |
+| Method | Current (WRONG) | Correct (Table 1) | Status |
+|--------|----------------|--------------------|--------|
+| SFT (10K) | 7.18 | **6.71** | ❌ way off |
+| DPO (10K) | 7.08 | **7.08** | ✅ |
+| KTO (20K) | 7.22 | **7.25** | ❌ |
+| ORPO (10K) | 7.15 | **7.42** | ❌ way off |
+| SimPO (10K) | 7.25 | **7.23** | ❌ |
+| SPPO (60K) | — | **7.28** | ❌ missing |
+| REINFORCE++ (10K) | — | **7.35** | ❌ missing |
+| DMAPO (1.9K) | 7.50 | **7.50** | ✅ |
+| Base (dashed line) | 7.41 | **7.41** | ✅ |
 
-### Correct bar values (from Table 1)
+### Panel B — Title and annotations are wrong
+
+| Problem | Fix |
+|---------|-----|
+| Title: "Only DMAPO Improves Over Pretrained Base" | Wrong — ORPO (7.42) also beats Base (7.41). Change to **"MT-Bench Scores (Pretrained Base = 7.41)"** |
+| Red annotation: "All baselines degrade below pretrained base" | Wrong — ORPO does not degrade. Remove or change to "Most baselines degrade" |
+| Green annotation: "Only DMAPO improves — with 5× less data" | Needs update since ORPO also improves. Change to **"DMAPO improves most — with 5× less data"** |
+
+### Summary of bar chart after fix
 
 ```
-SFT        6.71  (10k)
-DPO        7.08  (10k)
-KTO        7.25  (20k)
-ORPO       7.42  (10k)
-SimPO      7.23  (10k)
-SPPO       7.28  (60k)   ← NEW
-REINFORCE++7.35  (10k)   ← NEW
-DMAPO      7.50  (1.9k)  ← HIGHEST
-Base line: 7.41 (dashed horizontal)
+SFT         6.71  (10K)   red bar, below base
+DPO         7.08  (10K)   red bar, below base
+KTO         7.25  (20K)   red bar, below base
+SPPO        7.28  (60K)   red bar, below base    ← NEW
+SimPO       7.23  (10K)   red bar, below base
+REINFORCE++ 7.35  (10K)   red bar, below base    ← NEW
+ORPO        7.42  (10K)   green/teal bar, ABOVE base  ← now above line!
+DMAPO       7.50  (1.9K)  green bar, ABOVE base
+
+Base line at 7.41 (dashed horizontal)
 ```
 
-### Style notes
-- Color DMAPO bar green (distinct from baselines)
-- Keep dashed horizontal line at Base = 7.41
-- Bars below base line in red/orange, bars above in green
-- Include dataset size labels below each method name
-- No Chinese text anywhere
-- Export at high resolution (≥300 DPI)
+Note: With correct values, both ORPO and DMAPO are above the base line. The figure should reflect this (two green bars above the dashed line).
