@@ -54,16 +54,16 @@
 Preference optimization methods typically improve alignment by designing better training objectives, while treating the underlying data as fixed. We take the opposite approach: \method{} (Data-centric Multi-Agent Preference Optimization) keeps the optimizer simple (KTO) and instead invests computation in \emph{curating} the training set. Three independent LLM judges---evaluating helpfulness, factuality, and conciseness---must unanimously agree before a candidate enters training, yielding a 3.45\% acceptance rate that distills 54,236 on-policy candidates into 1,871 high-quality examples. Despite this 5--32$\times$ data reduction, \method{} outperforms all seven baselines on internal preference win-rate (\res{90.7}{1.2}), MT-Bench (7.50), AlpacaEval (98.0\% raw, 95.5\% LC), and IFEval (57.3\%)---including two recent 2025 methods (SPPO, REINFORCE++) that use an order of magnitude more data. The advantage is consistent across two backbone architectures (Mistral-7B, Llama-3.1-8B) and four ablations isolating each pipeline component. Our results suggest that, for preference alignment, \textbf{how data is selected matters more than how much is collected}.
 \end{abstract}
 
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../pic.png}
 \caption{\textbf{Overview of the \method{} pipeline and key result.} \textbf{(A)} Seven stages transform 14,272 prompts into 1,871 high-quality training examples (3.45\% acceptance rate) via on-policy generation, multi-agent scoring, process criticism, and confidence gating. \textbf{(B)} Benchmark comparison: DMAPO achieves the highest internal preference win-rate (90.7\%) and MT-Bench score (7.50) with only 1,871 training examples---5.3$\times$ less than any baseline.}
 \label{fig:teaser}
 \end{figure*}
-
-% ============================================================================
-\section{Introduction}
-\label{sec:intro}
 
 Aligning large language models (LLMs) with human preferences is central to making them safe, helpful, and honest~\citep{ouyang2022training, bai2022training}. The dominant paradigm---RLHF~\citep{christiano2017deep, stiennon2020learning} and its simplifications such as DPO~\citep{rafailov2023dpo}---focuses almost entirely on the \emph{training algorithm}: how to most efficiently extract a preference signal from a fixed dataset. Yet the quality of that dataset varies substantially---annotator disagreement, ambiguous preferences, and label noise can severely limit downstream performance regardless of the optimizer used.
 
@@ -241,7 +241,7 @@ We compare against seven training-time baselines plus four data-filtering ablati
 
 \subsection{Training details}
 
-All methods use LoRA ($r{=}16$, $\alpha{=}32$, dropout 0.05, targeting q/k/v/o/gate/up/down projections), AdamW optimizer (lr $5{\times}10^{-5}$, cosine schedule, 5\% warmup), effective batch size 16, bfloat16 precision, and 1 epoch. Each experiment is run with 4 random seeds ($s \in \{42, 123, 456, 789\}$); we report mean$\pm$std. Hardware: $8\times$ NVIDIA RTX PRO 6000 Blackwell ($\sim$95\,GB each). Software: TRL 0.29.0, PEFT 0.18.1.
+All methods use LoRA ($r{=}16$, $\alpha{=}32$, dropout 0.05, targeting q/k/v/o/gate/up/down projections), AdamW optimizer (lr $5{\times}10^{-5}$, cosine schedule, 5\% warmup), effective batch size 16, bfloat16 precision, and 1 epoch. Each experiment is run with 4 random seeds ($s \in \{42, 123, 456, 789\}$); we report mean$\pm$std. Hardware: $8\times$ NVIDIA A100 ($80$\,GB each). Software: TRL 0.29.0, PEFT 0.18.1.
 
 \subsection{Evaluation}
 
@@ -428,7 +428,7 @@ More broadly, our results suggest a practical principle for preference alignment
 % ============================================================================
 \section*{Reproducibility statement}
 
-All code, configurations, and scripts are publicly available. We use publicly available datasets (UltraFeedback, HelpSteer2) and models (Mistral-7B-Instruct-v0.2, Llama-3.1-8B-Instruct, Qwen3-8B) from HuggingFace. Data-filtering ablation scripts (\texttt{build\_random\_baseline.py}, \texttt{build\_single\_judge\_baseline.py}, \texttt{build\_no\_variance\_gate\_baseline.py}) and second-backbone configs (\texttt{training\_llama31.yaml}, \texttt{generation\_llama31.yaml}) are included. All hyperparameters are specified in Section~\ref{sec:experiments} and the YAML configuration files in our repository. Every experiment is run with 4 seeds ($s \in \{42, 123, 456, 789\}$). Hardware: 8$\times$ NVIDIA RTX PRO 6000 Blackwell GPUs.
+All code, configurations, and scripts are publicly available. We use publicly available datasets (UltraFeedback, HelpSteer2) and models (Mistral-7B-Instruct-v0.2, Llama-3.1-8B-Instruct, Qwen3-8B) from HuggingFace. Data-filtering ablation scripts (\texttt{build\_random\_baseline.py}, \texttt{build\_single\_judge\_baseline.py}, \texttt{build\_no\_variance\_gate\_baseline.py}) and second-backbone configs (\texttt{training\_llama31.yaml}, \texttt{generation\_llama31.yaml}) are included. All hyperparameters are specified in Section~\ref{sec:experiments} and the YAML configuration files in our repository. Every experiment is run with 4 seeds ($s \in \{42, 123, 456, 789\}$). Hardware: 8$\times$ NVIDIA A100 (80\,GB) GPUs.
 
 \section*{Ethics statement}
 
@@ -466,7 +466,7 @@ Batch size & 16 (2 $\times$ 8 grad accum) \\
 Precision & bfloat16 \\
 Epochs & 1 \\
 Seeds & 42, 123, 456, 789 \\
-Hardware & 8$\times$ RTX PRO 6000 ($\sim$95\,GB) \\
+Hardware & 8$\times$ A100 (80\,GB) \\
 Software & TRL 0.29.0, PEFT 0.18.1 \\
 \bottomrule
 \end{tabular}
@@ -745,7 +745,7 @@ $\sim$1\% & 542 & \res{7.18}{0.08} & \res{85.4}{1.9} \\
 
 \begin{table}[h]
 \centering
-\caption{Compute cost comparison (GPU-hours on RTX PRO 6000). \method{}'s total is higher than training-only baselines, but the curated dataset is reusable.}
+\caption{Compute cost comparison (GPU-hours on A100 80\,GB). \method{}'s total is higher than training-only baselines, but the curated dataset is reusable.}
 \label{tab:compute_cost}
 \vspace{0.5em}
 \resizebox{\columnwidth}{!}{%
