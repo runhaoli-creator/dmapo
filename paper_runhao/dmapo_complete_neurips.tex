@@ -65,7 +65,7 @@ Preference optimization methods typically improve alignment by designing better 
 \label{fig:teaser}
 \end{figure*}
 
-Aligning large language models (LLMs) with human preferences is central to making them safe, helpful, and honest~\citep{ouyang2022training, bai2022training}. The dominant paradigm---RLHF~\citep{christiano2017deep, stiennon2020learning} and its simplifications such as DPO~\citep{rafailov2023dpo}---focuses almost entirely on the \emph{training algorithm}: how to most efficiently extract a preference signal from a fixed dataset. Yet the quality of that dataset varies substantially---annotator disagreement, ambiguous preferences, and label noise can severely limit downstream performance regardless of the optimizer used.
+Aligning large language models (LLMs) with human preferences is central to making them safe, helpful, and honest~\citep{ouyang2022training, bai2022training,wang2026juli}. The dominant paradigm---RLHF~\citep{christiano2017deep, stiennon2020learning} and its simplifications such as DPO~\citep{rafailov2023dpo}---focuses almost entirely on the \emph{training algorithm}: how to most efficiently extract a preference signal from a fixed dataset. Yet the quality of that dataset varies substantially---annotator disagreement, ambiguous preferences, and label noise can severely limit downstream performance regardless of the optimizer used.
 
 We argue that the bottleneck lies not in the algorithm but in the data. LIMA~\citep{zhou2023lima} showed that 1,000 carefully curated examples can rival models trained on orders of magnitude more data, but left open the question of how to \emph{systematically} construct high-quality preference data at scale.
 
@@ -98,59 +98,7 @@ LIMA~\citep{zhou2023lima} demonstrated that a small, carefully curated set can r
 \section{Method}
 \label{sec:method}
 
-\method{} is a seven-stage pipeline (Figure~\ref{fig:pipeline}) that transforms raw instruction prompts into a high-quality preference training dataset. We describe each stage below.
-
-\begin{figure}[t]
-\centering
-\resizebox{0.6\textwidth}{!}{%
-\begin{tikzpicture}[
-  node distance=0.45cm and 0.6cm,
-  stage/.style={draw, rounded corners=3pt, minimum width=3.0cm, minimum height=0.7cm, font=\small\bfseries, text=white, align=center},
-  annot/.style={font=\scriptsize\itshape, text=black!70},
-  arr/.style={-{Stealth[length=3pt]}, thick, black!60},
-]
-% Stage 1
-\node[stage, fill=pipeblue] (s1) {Stage 1\\[-1pt]{\footnotesize Prompt Collection}};
-\node[annot, right=0.3cm of s1] (a1) {UltraFeedback + HelpSteer2};
-\node[annot, below=0.05cm of s1] (n1) {14{,}272 prompts};
-% Stage 2
-\node[stage, fill=pipeblue, below=0.55cm of s1] (s2) {Stage 2\\[-1pt]{\footnotesize On-Policy Generation}};
-\node[annot, right=0.3cm of s2] (a2) {$k{=}4$ per prompt, $T{=}0.8$};
-\node[annot, below=0.05cm of s2] (n2) {54{,}236 candidates};
-% Stage 3
-\node[stage, fill=pipeorange, below=0.55cm of s2] (s3) {Stage 3\\[-1pt]{\footnotesize Multi-Agent Scoring}};
-% Judge boxes
-\node[draw, rounded corners=2pt, fill=pipeorange!15, font=\scriptsize, minimum width=1.5cm, minimum height=0.45cm, right=0.3cm of s3, yshift=0.35cm] (j1) {Helpfulness};
-\node[draw, rounded corners=2pt, fill=pipeorange!15, font=\scriptsize, minimum width=1.5cm, minimum height=0.45cm, right=0.3cm of s3] (j2) {Factuality};
-\node[draw, rounded corners=2pt, fill=pipeorange!15, font=\scriptsize, minimum width=1.5cm, minimum height=0.45cm, right=0.3cm of s3, yshift=-0.35cm] (j3) {Conciseness};
-% Stage 4
-\node[stage, fill=pipeorange, below=0.55cm of s3] (s4) {Stage 4\\[-1pt]{\footnotesize Process Critic}};
-\node[annot, right=0.3cm of s4] (a4) {Reasoning penalty $\alpha{=}0.15$};
-% Stage 5
-\node[stage, fill=pipered, below=0.55cm of s4] (s5) {Stage 5\\[-1pt]{\footnotesize Confidence Gating}};
-\node[annot, right=0.3cm of s5] (a5) {3.45\% acceptance rate};
-\node[annot, below=0.05cm of s5] (n5) {1{,}871 gated examples};
-% Discard arrow
-\node[annot, left=0.4cm of s5, text=pipered, align=center] (disc) {52{,}365\\discarded};
-\draw[arr, pipered, dashed] (s5.west) -- (disc.east);
-% Stage 6
-\node[stage, fill=pipegreen, below=0.55cm of s5] (s6) {Stage 6\\[-1pt]{\footnotesize KTO Training}};
-\node[annot, right=0.3cm of s6] (a6) {$\beta{=}0.1$, LoRA $r{=}16$};
-% Stage 7
-\node[stage, fill=pipeteal, below=0.55cm of s6] (s7) {Stage 7\\[-1pt]{\footnotesize Evaluation}};
-\node[annot, right=0.3cm of s7] (a7) {MT-Bench, AlpacaEval, IFEval};
-% Arrows
-\draw[arr] (s1) -- (s2);
-\draw[arr] (s2) -- (s3);
-\draw[arr] (s3) -- (s4);
-\draw[arr] (s4) -- (s5);
-\draw[arr] (s5) -- (s6);
-\draw[arr] (s6) -- (s7);
-\end{tikzpicture}%
-}
-\caption{The \method{} pipeline. The key innovation is in Stages 3--5: three independent judges score each candidate along complementary dimensions, and only candidates with unanimous strong consensus ($\tau_+{\geq}7$, $\tau_-{\leq}4$, $\text{Var}<2.5$) pass through the quality gate. The 96.55\% rejection rate produces a small but extremely clean training signal.}
-\label{fig:pipeline}
-\end{figure}
+\method{} is a seven-stage pipeline (Figure~\ref{fig:teaser}A) that transforms raw instruction prompts into a high-quality preference training dataset. We describe each stage below.
 
 \subsection{Prompt collection}
 
@@ -163,15 +111,12 @@ For each prompt, we generate $k{=}4$ candidate responses using the policy backbo
 \subsection{Multi-agent scoring}
 \label{sec:scoring}
 
-Each candidate is independently scored by three Qwen3-8B~\citep{qwen2025qwen3} judge instances, each evaluating a complementary quality dimension on a 1--10 scale:
-
-\begin{itemize}
-    \item \textbf{Helpfulness}: Does the response address the user's needs?
-    \item \textbf{Factuality}: Is the information accurate and well-grounded?
-    \item \textbf{Conciseness}: Is the response appropriately concise?
-\end{itemize}
-
-Each judge uses a structured prompt with a quality rubric and generates a reasoning chain followed by a numerical score. We use the model in \texttt{/no\_think} mode for consistent, rubric-based evaluation. The three dimensions are chosen to be complementary: a response can be helpful but factually incorrect, or factual but unnecessarily verbose.
+Each candidate response $y$ to prompt $x$ is independently scored by three Qwen3-8B~\citep{qwen2025qwen3} judge instances, each evaluating a complementary quality dimension on a 1--10 scale: helpfulness $s_h(x,y)$, factuality $s_f(x,y)$, and conciseness $s_c(x,y)$. The aggregate score is:
+\begin{equation}
+    \bar{s}(x,y) = \frac{1}{3}\bigl(s_h(x,y) + s_f(x,y) + s_c(x,y)\bigr) - \delta(x,y)
+    \label{eq:aggregate}
+\end{equation}
+where $\delta(x,y) \in [0, \alpha_{\max}]$ is the process critic penalty (Section~\ref{sec:critic}). Each judge uses a structured rubric prompt and generates a reasoning chain followed by a numerical score. We use the model in \texttt{/no\_think} mode for consistent evaluation. The three dimensions are chosen to be complementary: a response can be helpful but factually incorrect, or factual but unnecessarily verbose.
 
 \subsection{Process critic}
 \label{sec:critic}
@@ -184,23 +129,40 @@ After multi-agent scoring, a fourth Qwen3-8B instance acts as a \emph{process cr
     \item \textbf{Severe} (logical contradiction, factual error): penalty $0.15$.
 \end{itemize}
 
-The total critic penalty is capped at $\alpha_{\max}{=}0.15$ per candidate and is subtracted from the mean of the three judge scores before the confidence gate (Section~\ref{sec:gating}) is applied. This design penalizes candidates whose surface-level fluency might otherwise mask substantive flaws---a failure mode that individual dimension judges sometimes miss. In the ablation (Table~\ref{tab:ablation_gating}), removing the critic ($\alpha{=}0$) reduces internal WR by 3.2\,pp, confirming its contribution to data quality.
+Formally, the critic penalty is:
+\begin{equation}
+    \delta(x,y) = \min\!\Bigl(\sum_{i=1}^{|\mathcal{F}|} p_i,\; \alpha_{\max}\Bigr), \quad p_i \in \{0.05, 0.10, 0.15\}, \quad \alpha_{\max} = 0.15
+    \label{eq:critic}
+\end{equation}
+where $\mathcal{F}$ is the set of detected flaws and $p_i$ is the severity-dependent penalty for flaw $i$. The penalty is subtracted from the aggregate score (Eq.~\ref{eq:aggregate}) before the confidence gate is applied. This design penalizes candidates whose surface-level fluency masks substantive flaws---a failure mode that individual dimension judges sometimes miss. In the ablation (Table~\ref{tab:ablation_gating}), removing the critic ($\delta{=}0$) reduces internal WR by 3.2\,pp.
 
 \subsection{Confidence gating}
 \label{sec:gating}
 
-The confidence gate transforms multi-agent scores into binary labels through aggressive filtering:
-
+The confidence gate maps multi-agent scores to a ternary label $\ell \in \{\texttt{des}, \texttt{und}, \texttt{discard}\}$ via:
 \begin{align}
-\text{Desirable:} \quad & s_h \geq \tau_+ \;\wedge\; s_f \geq \tau_+ \;\wedge\; s_c \geq \tau_+ \;\wedge\; \text{Var}(\mathbf{s}) < \sigma^2 \\
-\text{Undesirable:} \quad & s_h \leq \tau_- \;\wedge\; s_f \leq \tau_- \;\wedge\; s_c \leq \tau_- \;\wedge\; \text{Var}(\mathbf{s}) < \sigma^2
+\ell(x,y) = \begin{cases}
+\texttt{des}  & \text{if } \min(s_h, s_f, s_c) \geq \tau_+ \;\wedge\; \text{Var}(\mathbf{s}) < \sigma^2 \\
+\texttt{und}  & \text{if } \max(s_h, s_f, s_c) \leq \tau_- \;\wedge\; \text{Var}(\mathbf{s}) < \sigma^2 \\
+\texttt{discard} & \text{otherwise}
+\end{cases}
+\label{eq:gate}
 \end{align}
-
-where $s_h, s_f, s_c$ are helpfulness, factuality, and conciseness scores; $\tau_+{=}7$, $\tau_-{=}4$; and $\sigma^2{=}2.5$ is the variance threshold. All other candidates are \textbf{discarded}. This accepts only 3.45\% of candidates (Table~\ref{tab:pipeline_stats}), producing a dataset with a quality gap of $\sim$6.8 points between desirable ($\mu{=}9.23$) and undesirable ($\mu{=}2.42$) examples.
+where $\mathbf{s} = (s_h, s_f, s_c)$ are the critic-adjusted scores, $\tau_+{=}7$, $\tau_-{=}4$, and $\sigma^2{=}2.5$ is the inter-judge variance threshold. The key design choice is the conjunction over all three dimensions: a candidate must score well on \emph{every} dimension to be accepted, not just on average. This unanimity requirement is strict---only 3.45\% of candidates pass (Table~\ref{tab:pipeline_stats})---but the accepted examples exhibit a quality gap of $\Delta\bar{s} = 9.23 - 2.42 = 6.81$ points between desirable and undesirable labels, producing a training signal with minimal ambiguity.
 
 \subsection{KTO policy training}
 
-We train with KTO~\citep{ethayarajh2024kto}, which is well-suited because: (1) our gating produces binary (desirable/undesirable) labels rather than paired preferences, matching KTO's input format directly; (2) KTO's prospect-theoretic loss naturally exploits the large quality gap between accepted examples. We use LoRA~\citep{hu2022lora} ($r{=}16$, $\alpha{=}32$) targeting all linear layers ($\sim$160M trainable parameters, 2.2\% of backbone), with KTO hyperparameter $\beta{=}0.1$.
+We train with KTO~\citep{ethayarajh2024kto}, whose loss operates directly on binary labels---a natural fit for our gated dataset. Let $r_\theta(x,y) = \log \frac{\pi_\theta(y|x)}{\pi_{\text{ref}}(y|x)}$ denote the implicit reward and $z_0 = \mathbb{E}_{x'}\bigl[\text{KL}[\pi_\theta(\cdot|x') \| \pi_{\text{ref}}(\cdot|x')]\bigr]$ a running baseline. The KTO loss is:
+\begin{equation}
+\mathcal{L}_{\text{KTO}} = \mathbb{E}_{(x,y)\sim\mathcal{D}} \begin{cases}
+\sigma\bigl(z_0 - \beta\, r_\theta(x,y)\bigr) & \text{if } \ell(x,y) = \texttt{des} \\
+\sigma\bigl(\beta\, r_\theta(x,y) - z_0\bigr) & \text{if } \ell(x,y) = \texttt{und}
+\end{cases}
+\label{eq:kto}
+\end{equation}
+where $\sigma$ is the sigmoid and $\beta{=}0.1$ controls the reward margin. Intuitively, the loss encourages the policy to increase probability on desirable outputs and decrease it on undesirable ones, with the baseline $z_0$ preventing reward hacking. The large quality gap in our gated data ($\Delta\bar{s} \approx 6.8$) produces a strong initial reward difference between the two classes, yielding fast convergence (final loss 0.037; see Appendix~\ref{app:training}).
+
+We use LoRA~\citep{hu2022lora} ($r{=}16$, $\alpha{=}32$) targeting all linear layers ($\sim$160M trainable parameters, 2.2\% of backbone).
 
 
 % ============================================================================
@@ -346,13 +308,13 @@ Base & 5.60 & \textbf{7.90} & 8.70 & \textbf{6.45} & 7.15 & 7.40 & 8.20 & 7.90 &
 
 \subsection{Why does quality gating work?}
 
-The ablations and training dynamics point to three complementary mechanisms:
+The ablations and training dynamics point to three complementary mechanisms.
 
-\textbf{Gradient noise reduction.} The No-Variance-Gate ablation shows that including examples where judges disagree \emph{hurts} performance (77.5\% vs.\ 78.3\% for Random). These high-variance examples likely send conflicting gradient signals---one judge deems a response good, another poor---causing optimization to oscillate. The unanimity requirement eliminates this source of noise.
+\textbf{Gradient noise reduction.} The No-Variance-Gate ablation shows that including examples where judges disagree \emph{hurts} performance (77.5\% vs.\ 78.3\% for Random). The mechanism is straightforward: when $\text{Var}(\mathbf{s})$ is high, the label assigned by the threshold may not reflect true quality---one judge considers the response desirable while another does not. Training on such examples produces conflicting gradient directions within the same batch, slowing convergence. The unanimity requirement eliminates this source of noise at the cost of dataset size, a tradeoff that our ablations show is favorable.
 
-\textbf{Large quality gap.} The gated dataset has a 6.8-point gap between desirable ($\mu{=}9.23$) and undesirable ($\mu{=}2.42$) examples, compared to $\sim$2--3 points in ungated data. This translates directly into \method{}'s 10.96 log-prob margin (Table~\ref{tab:training}), over 4$\times$ larger than the next-best method, and a final loss of 0.037---indicating the model can fully separate the two classes.
+\textbf{Amplified reward signal.} Consider the KTO gradient for a desirable example: it scales with $\sigma'(z_0 - \beta\, r_\theta) \cdot \beta$, which is largest when $r_\theta \approx z_0 / \beta$. The gated dataset has a quality gap of $\Delta\bar{s} = 6.81$ points---over 3$\times$ larger than ungated data ($\sim$2 points)---which produces a correspondingly larger initial $r_\theta$ separation between desirable and undesirable examples. This amplified signal drives \method{}'s 10.96 log-prob margin (Appendix~\ref{app:training}), over 4$\times$ larger than the next-best method, and explains the rapid convergence to a final loss of 0.037.
 
-\textbf{On-policy coherence.} Because candidates are generated by the policy being trained, the gated examples represent the best and worst of the model's \emph{own} distribution. This avoids the distribution mismatch that occurs when training on externally collected preferences~\citep{tunstall2024zephyr}.
+\textbf{On-policy coherence.} Because candidates are generated by the policy being trained, the gated examples represent the best and worst of the model's \emph{own} distribution. This avoids the distribution mismatch that occurs when training on externally collected preferences~\citep{tunstall2024zephyr}, where the model may never produce outputs similar to the training examples during inference.
 
 \subsection{Ablation: gating strictness and process critic}
 
